@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.2] - 2024-12-XX
+
+### Changed
+
+- Updated `vue-admin-panel:make-user` command to create a user instance in the database instead of generating a User model
+- Command now interactively prompts for:
+  - Name
+  - Email
+  - Password (with hidden input)
+  - Password confirmation (with hidden input)
+  - Email verification status
+- Added validation for all user fields including password confirmation matching
+- Command displays a summary table with created user information
+
+### Fixed
+
+- Corrected command functionality: now creates user database records instead of model files
+
 ## [2.4.1] - 2024-12-XX
 
 ### Added
