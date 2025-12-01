@@ -487,11 +487,47 @@ CSS;
         $routesContent = File::get($routesFile);
         
         // Check if admin routes already exist
-        if (strpos($routesContent, "Route::prefix('admin')") !== false || 
-            strpos($routesContent, "Route::get('/admin/login'") !== false ||
-            strpos($routesContent, "->name('admin.login')") !== false) {
-            $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
-            return;
+        $routesExist = strpos($routesContent, "Route::prefix('admin')") !== false || 
+                       strpos($routesContent, "Route::get('/admin/login'") !== false ||
+                       strpos($routesContent, "->name('admin.login')") !== false;
+        
+        // Check if routes need to be updated (old guard code)
+        $needsUpdate = false;
+        if ($routesExist) {
+            // Check for old guard code that needs fixing
+            if (strpos($routesContent, "Auth::guard('user')") !== false || 
+                strpos($routesContent, "auth:user") !== false) {
+                $needsUpdate = true;
+                $this->warn('⚠️  Admin routes exist but use old guard code. Updating...');
+                
+                // Fix Auth::guard('user') to Auth::attempt()
+                $routesContent = preg_replace(
+                    "/\\\Illuminate\\\Support\\\Facades\\\Auth::guard\(['\"]user['\"]\)->attempt/",
+                    "\\Illuminate\\Support\\Facades\\Auth::attempt",
+                    $routesContent
+                );
+                
+                // Fix auth:user middleware to auth
+                $routesContent = preg_replace(
+                    "/middleware\(\[['\"]auth:user['\"]\]\)/",
+                    "middleware(['auth'])",
+                    $routesContent
+                );
+                
+                // Update comment if it exists
+                $routesContent = preg_replace(
+                    "/\/\/ Protected admin routes \(auth:user guard\)/",
+                    "// Protected admin routes (auth middleware - uses default web guard)",
+                    $routesContent
+                );
+                
+                File::put($routesFile, $routesContent);
+                $this->info('✅ Updated admin routes to use default auth guard.');
+                return;
+            } else {
+                $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
+                return;
+            }
         }
 
         // Check if Inertia is imported
