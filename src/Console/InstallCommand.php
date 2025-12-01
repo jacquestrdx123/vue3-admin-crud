@@ -77,6 +77,11 @@ class InstallCommand extends Command
         $this->createAdminLayouts();
         $this->newLine();
 
+        // Create UI components and composables
+        $this->info('🎨 Creating UI components and composables...');
+        $this->createUIComponents();
+        $this->newLine();
+
         // Install npm dependencies
         $this->info('📥 Installing npm dependencies (this may take a few minutes)...');
         $this->newLine();
@@ -881,6 +886,84 @@ CSS;
                 File::copy($statCardStub, $statCardPath);
                 $this->info('Created StatCard.vue');
             }
+        }
+    }
+
+    /**
+     * Create UI components and composables
+     */
+    protected function createUIComponents(): void
+    {
+        $componentsPath = resource_path('js/Components');
+        $uiPath = $componentsPath.'/UI';
+        $composablesPath = resource_path('js/Composables');
+
+        // Create directories if they don't exist
+        if (!File::exists($uiPath)) {
+            File::makeDirectory($uiPath, 0755, true);
+        }
+        if (!File::exists($composablesPath)) {
+            File::makeDirectory($composablesPath, 0755, true);
+        }
+
+        // Card component
+        $cardStub = __DIR__.'/../../stubs/Components/UI/Card.vue.stub';
+        $cardPath = $uiPath.'/Card.vue';
+        if (File::exists($cardStub)) {
+            if (File::exists($cardPath)) {
+                File::copy($cardStub, $cardPath);
+                $this->info('Updated Card.vue');
+            } else {
+                File::copy($cardStub, $cardPath);
+                $this->info('Created Card.vue');
+            }
+        } else {
+            $this->warn('⚠️  Card.vue.stub not found.');
+        }
+
+        // Badge component
+        $badgeStub = __DIR__.'/../../stubs/Components/UI/Badge.vue.stub';
+        $badgePath = $uiPath.'/Badge.vue';
+        if (File::exists($badgeStub)) {
+            if (File::exists($badgePath)) {
+                File::copy($badgeStub, $badgePath);
+                $this->info('Updated Badge.vue');
+            } else {
+                File::copy($badgeStub, $badgePath);
+                $this->info('Created Badge.vue');
+            }
+        } else {
+            $this->warn('⚠️  Badge.vue.stub not found.');
+        }
+
+        // Pagination component
+        $paginationStub = __DIR__.'/../../stubs/Components/UI/Pagination.vue.stub';
+        $paginationPath = $uiPath.'/Pagination.vue';
+        if (File::exists($paginationStub)) {
+            if (File::exists($paginationPath)) {
+                File::copy($paginationStub, $paginationPath);
+                $this->info('Updated Pagination.vue');
+            } else {
+                File::copy($paginationStub, $paginationPath);
+                $this->info('Created Pagination.vue');
+            }
+        } else {
+            $this->warn('⚠️  Pagination.vue.stub not found.');
+        }
+
+        // useFieldVisibility composable
+        $composableStub = __DIR__.'/../../stubs/Composables/useFieldVisibility.js.stub';
+        $composablePath = $composablesPath.'/useFieldVisibility.js';
+        if (File::exists($composableStub)) {
+            if (File::exists($composablePath)) {
+                File::copy($composableStub, $composablePath);
+                $this->info('Updated useFieldVisibility.js');
+            } else {
+                File::copy($composableStub, $composablePath);
+                $this->info('Created useFieldVisibility.js');
+            }
+        } else {
+            $this->warn('⚠️  useFieldVisibility.js.stub not found.');
         }
     }
 }

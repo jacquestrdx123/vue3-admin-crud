@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.6] - 2024-12-XX
+
+### Added
+
+- Added missing UI components as stubs: Card.vue, Badge.vue, Pagination.vue
+- Added useFieldVisibility.js composable stub for conditional field visibility
+- Added FunkyLoader.vue and Drawer.vue to resources/js/UI/ for automatic publishing
+- InstallCommand now automatically creates UI components and composables during installation
+- Components are created in: `resources/js/Components/UI/` and `resources/js/Composables/`
+
+### Fixed
+
+- Fixed BaseDataTable import paths for FunkyLoader and Drawer to use vendor path
+- Changed imports from `../UI/` to `@/vendor/inertia-resource/UI/` for proper resolution
+- Resolved build errors caused by missing UI components
+
+### Changed
+
+- InstallCommand now includes `createUIComponents()` method that creates/updates UI components
+- UI components are always updated during installation to ensure they exist
+
 ## [2.4.5] - 2024-12-XX
 
 ### Fixed

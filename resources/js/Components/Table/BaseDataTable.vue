@@ -650,8 +650,8 @@ import DependentSelectFilter from './Filters/DependentSelectFilter.vue'
 import DateFilter from './Filters/DateFilter.vue'
 import SubscribableTypeFilter from './Filters/SubscribableTypeFilter.vue'
 import JsonColumn from './Columns/JsonColumn.vue'
-import FunkyLoader from '../UI/FunkyLoader.vue'
-import Drawer from '../UI/Drawer.vue'
+import FunkyLoader from '@/vendor/inertia-resource/UI/FunkyLoader.vue'
+import Drawer from '@/vendor/inertia-resource/UI/Drawer.vue'
 
 const props = defineProps({
   data: {
