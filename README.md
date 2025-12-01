@@ -364,3 +364,4 @@ For detailed documentation, see the [PACKAGE_SUMMARY.md](PACKAGE_SUMMARY.md) fil
 ## License
 
 MIT
+# vue3-admin-crud
