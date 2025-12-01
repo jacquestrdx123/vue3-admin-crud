@@ -68,19 +68,14 @@ class InstallCommand extends Command
         $this->newLine();
         $this->info('✅ npm install completed successfully!');
 
+        // Check and fix vite.config.js if needed
+        $this->info('🔧 Checking vite.config.js...');
+        $this->fixViteConfig();
+        $this->newLine();
+        
         $this->newLine();
         $this->info('✅ Vue Admin Panel installation complete!');
         $this->newLine();
-        
-        // Check if vite.config.js exists and warn about dependencies
-        $viteConfigPath = base_path('vite.config.js');
-        if (File::exists($viteConfigPath)) {
-            $viteConfigContent = File::get($viteConfigPath);
-            if (str_contains($viteConfigContent, 'laravel/vite-plugin')) {
-                $this->comment('💡 Note: Your vite.config.js uses laravel/vite-plugin (from laravel-vite-plugin package) which has been added to package.json.');
-                $this->comment('   If you encounter errors, make sure npm install completed successfully.');
-            }
-        }
         
         $this->newLine();
         $this->comment('Next steps:');
@@ -223,6 +218,52 @@ class InstallCommand extends Command
         } else {
             $this->comment('Customer login page skipped (use_customers is disabled).');
             $this->comment('Enable it in config/inertia-resource.php to create the customer login page.');
+        }
+    }
+
+    /**
+     * Fix vite.config.js if it has incorrect import
+     */
+    protected function fixViteConfig(): void
+    {
+        $viteConfigPath = base_path('vite.config.js');
+        
+        if (!File::exists($viteConfigPath)) {
+            // Publish the stub if vite.config.js doesn't exist
+            $stubPath = __DIR__.'/../../stubs/vite.config.js.stub';
+            if (File::exists($stubPath)) {
+                File::copy($stubPath, $viteConfigPath);
+                $this->info('Created vite.config.js with correct configuration.');
+            }
+            return;
+        }
+
+        $viteConfigContent = File::get($viteConfigPath);
+        
+        // Check for incorrect import: import laravel from 'laravel-vite-plugin';
+        if (str_contains($viteConfigContent, "from 'laravel-vite-plugin'") || 
+            str_contains($viteConfigContent, 'from "laravel-vite-plugin"')) {
+            
+            $this->warn('⚠️  Found incorrect import in vite.config.js: laravel-vite-plugin');
+            $this->comment('   The correct import should be: laravel/vite-plugin');
+            
+            // Fix the import
+            $fixedContent = preg_replace(
+                "/import\s+laravel\s+from\s+['\"]laravel-vite-plugin['\"]/",
+                "import laravel from 'laravel/vite-plugin'",
+                $viteConfigContent
+            );
+            
+            if ($fixedContent !== $viteConfigContent) {
+                File::put($viteConfigPath, $fixedContent);
+                $this->info('✅ Fixed vite.config.js import statement.');
+            } else {
+                $this->warn('⚠️  Could not automatically fix vite.config.js. Please update manually:');
+                $this->comment('   Change: import laravel from \'laravel-vite-plugin\';');
+                $this->comment('   To:     import laravel from \'laravel/vite-plugin\';');
+            }
+        } elseif (str_contains($viteConfigContent, 'laravel/vite-plugin')) {
+            $this->comment('✓ vite.config.js already has correct import.');
         }
     }
 }

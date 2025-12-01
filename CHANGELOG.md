@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.4] - 2024-12-XX
+
+### Fixed
+- Fixed vite.config.js import: automatically detects and fixes incorrect `import laravel from 'laravel-vite-plugin'` to correct `import laravel from 'laravel/vite-plugin'`
+- Added vite.config.js stub to publishable assets
+- InstallCommand now automatically fixes incorrect vite.config.js imports during installation
+
 ## [1.1.3] - 2024-12-XX
 
 ### Fixed
+
 - Fixed incorrect package name: changed from `@laravel/vite-plugin` (doesn't exist) to `laravel-vite-plugin` (correct package)
 - InstallCommand now runs `npm install` automatically without confirmation
 - Improved error messages and warnings for Vite configuration

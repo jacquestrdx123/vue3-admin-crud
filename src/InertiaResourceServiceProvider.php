@@ -62,6 +62,11 @@ class InertiaResourceServiceProvider extends ServiceProvider
             __DIR__.'/../tailwind.config.js' => base_path('tailwind.config.js'),
         ], 'inertia-resource-tailwind');
 
+        // Publish vite.config.js stub
+        $this->publishes([
+            __DIR__.'/../stubs/vite.config.js.stub' => base_path('vite.config.js'),
+        ], 'inertia-resource-vite');
+
         // Publish CSS file
         $this->publishes([
             __DIR__.'/../resources/css/app.css' => resource_path('css/vue-admin-panel.css'),
@@ -80,6 +85,7 @@ class InertiaResourceServiceProvider extends ServiceProvider
             __DIR__.'/../resources/js' => resource_path('js/vendor/inertia-resource'),
             __DIR__.'/../tailwind.config.js' => base_path('tailwind.config.js'),
             __DIR__.'/../resources/css/app.css' => resource_path('css/vue-admin-panel.css'),
+            __DIR__.'/../stubs/vite.config.js.stub' => base_path('vite.config.js'),
         ], 'inertia-resource');
     }
 }
