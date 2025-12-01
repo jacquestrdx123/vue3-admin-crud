@@ -19,7 +19,7 @@ A Filament-like resource system for Inertia.js applications. This package provid
 Simply run:
 
 ```bash
-composer require jacquestrdx/vue3-admin-crud
+composer require jacquestrdx123/vue3-admin-crud
 ```
 
 This will automatically:

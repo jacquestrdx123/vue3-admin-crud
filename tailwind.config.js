@@ -3,7 +3,7 @@ export default {
     content: [
         './resources/js/**/*.{vue,js,ts,jsx,tsx}',
         './resources/js/vendor/inertia-resource/**/*.{vue,js,ts,jsx,tsx}',
-        './vendor/jacquestrdx/vue3-admin-crud/resources/js/**/*.{vue,js,ts,jsx,tsx}',
+        './vendor/jacquestrdx123/vue3-admin-crud/resources/js/**/*.{vue,js,ts,jsx,tsx}',
     ],
     theme: {
         extend: {
