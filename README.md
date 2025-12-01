@@ -33,12 +33,18 @@ This will automatically:
 After the Composer installation, run:
 
 ```bash
-# Install JavaScript dependencies
-npm install
-
-# Run the installer (publishes assets and sets up configuration)
+# Run the installer (publishes assets, updates package.json, and runs npm install)
 php artisan vue-admin-panel:install
 ```
+
+The installer will automatically:
+
+- ✅ Merge npm dependencies into your `package.json` (including `laravel-vite-plugin`)
+- ✅ Run `npm install` to install all dependencies
+- ✅ Publish all package assets (components, config, migrations)
+- ✅ Set up Tailwind CSS configuration
+
+> **Note**: If you encounter "Cannot find package 'laravel'" errors, make sure `npm install` completed successfully. The `laravel-vite-plugin` package is required for Vite to work with Laravel.
 
 Or manually publish assets:
 

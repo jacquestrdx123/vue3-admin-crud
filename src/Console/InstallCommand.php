@@ -53,28 +53,38 @@ class InstallCommand extends Command
         $this->newLine();
 
         // Install npm dependencies
-        if ($this->confirm('Would you like to run npm install now?', true)) {
-            $this->info('📥 Running npm install...');
+        $this->info('📥 Installing npm dependencies (this may take a few minutes)...');
+        $this->newLine();
+        
+        passthru('npm install', $returnCode);
+        
+        if ($returnCode !== 0) {
+            $this->error('❌ npm install failed. Please run it manually: npm install');
             $this->newLine();
-            
-            passthru('npm install', $returnCode);
-            
-            if ($returnCode !== 0) {
-                $this->error('npm install failed. Please run it manually: npm install');
-                return 1;
-            }
-            
-            $this->newLine();
-            $this->info('✅ npm install completed successfully!');
-        } else {
-            $this->warn('⚠️  Please run "npm install" manually to install dependencies.');
+            $this->warn('⚠️  Important: You must run "npm install" before using Vite or building assets.');
+            return 1;
         }
+        
+        $this->newLine();
+        $this->info('✅ npm install completed successfully!');
 
         $this->newLine();
         $this->info('✅ Vue Admin Panel installation complete!');
         $this->newLine();
+        
+        // Check if vite.config.js exists and warn about dependencies
+        $viteConfigPath = base_path('vite.config.js');
+        if (File::exists($viteConfigPath)) {
+            $viteConfigContent = File::get($viteConfigPath);
+            if (str_contains($viteConfigContent, 'laravel/vite-plugin')) {
+                $this->comment('💡 Note: Your vite.config.js uses laravel/vite-plugin (from laravel-vite-plugin package) which has been added to package.json.');
+                $this->comment('   If you encounter errors, make sure npm install completed successfully.');
+            }
+        }
+        
+        $this->newLine();
         $this->comment('Next steps:');
-        $this->comment('1. Update your vite.config.js to include Tailwind CSS 4 plugin');
+        $this->comment('1. Update your vite.config.js to include Tailwind CSS 4 plugin (if not already done)');
         $this->comment('2. Ensure your CSS file imports Tailwind: @import "tailwindcss";');
         $this->comment('3. Start your development server: npm run dev');
         
@@ -102,7 +112,7 @@ class InstallCommand extends Command
 
         $packageDevDependencies = [
             'vite' => '^5.4.0',
-            '@laravel/vite-plugin' => '^1.0.0',
+            'laravel-vite-plugin' => '^0.7.2',
         ];
 
         if (File::exists($packageJsonPath)) {

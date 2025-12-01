@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.3] - 2024-12-XX
+
+### Fixed
+- Fixed incorrect package name: changed from `@laravel/vite-plugin` (doesn't exist) to `laravel-vite-plugin` (correct package)
+- InstallCommand now runs `npm install` automatically without confirmation
+- Improved error messages and warnings for Vite configuration
+
 ## [1.1.2] - 2024-12-XX
 
 ### Fixed
