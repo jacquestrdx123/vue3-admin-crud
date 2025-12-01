@@ -102,7 +102,7 @@ class InstallCommand extends Command
 
         $packageDevDependencies = [
             'vite' => '^5.4.0',
-            'laravel-vite-plugin' => '^1.0.0',
+            '@laravel/vite-plugin' => '^1.0.0',
         ];
 
         if (File::exists($packageJsonPath)) {

@@ -7,15 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2024-12-XX
+
+### Fixed
+
+- Fixed missing `@laravel/vite-plugin` dependency in package.json and InstallCommand
+- Resolved "Cannot find package 'laravel'" error when running `npm run build`
+
 ## [1.1.1] - 2024-12-XX
 
 ### Added
+
 - Documentation for republishing assets after package updates
 - `vue-admin-panel:publish` command for easy asset republishing
 
 ## [1.1.0] - 2024-12-XX
 
 ### Added
+
 - `make:inertia-resource` Artisan command to generate InertiaResource components
 - Command supports flags: `--controller`, `--routes`, `--vue`, and `--all`
 - Stub files for InertiaResource, Controller, Routes, and Vue pages (Index, Create, Edit, Show)
@@ -24,11 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File overwrite protection with confirmation prompts
 
 ### Changed
+
 - Service provider now registers the new `CreateInertiaResourceCommand`
 
 ## [1.0.0] - 2024-XX-XX
 
 ### Added
+
 - Initial release of InertiaResource package
 - Complete CRUD resource system for Inertia.js applications
 - Table components with columns, filters, sorting, and pagination
@@ -44,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive documentation
 
 ### Features
+
 - **Columns**: Text, Money, Date, Boolean, Badge, Link, Array, JSON, Percentage
 - **Form Fields**: Text, Textarea, Select, MultiSelect, Number, Date, DateTime, Time, Checkbox, Toggle, FileUpload, RichEditor, Repeater, Relationship, GoogleMaps, Masked, AnchorTag
 - **Filters**: Select, Boolean, Date, Number, Custom, Trashed
@@ -53,4 +65,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2024-XX-XX
 
 ### Added
+
 - Initial stable release
