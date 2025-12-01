@@ -52,6 +52,11 @@ class InstallCommand extends Command
         $this->createLoginPages();
         $this->newLine();
 
+        // Create admin routes
+        $this->info('🛣️  Creating admin routes...');
+        $this->createAdminRoutes();
+        $this->newLine();
+
         // Install npm dependencies
         $this->info('📥 Installing npm dependencies (this may take a few minutes)...');
         $this->newLine();
@@ -226,6 +231,125 @@ class InstallCommand extends Command
             $this->comment('Customer login page skipped (use_customers is disabled).');
             $this->comment('Enable it in config/inertia-resource.php to create the customer login page.');
         }
+    }
+
+    /**
+     * Create admin routes
+     */
+    protected function createAdminRoutes(): void
+    {
+        $routesPath = base_path('routes');
+        $routesFile = "{$routesPath}/web.php";
+
+        // Check if routes file exists
+        if (!File::exists($routesFile)) {
+            $this->warn('⚠️  Could not find routes/web.php file.');
+            $this->comment('Please add the following routes manually:');
+            $this->displayAdminRoutes();
+            return;
+        }
+
+        $routesContent = File::get($routesFile);
+        
+        // Check if admin routes already exist
+        if (strpos($routesContent, "Route::prefix('admin')") !== false || 
+            strpos($routesContent, "Route::get('/admin/login'") !== false ||
+            strpos($routesContent, "->name('admin.login')") !== false) {
+            $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
+            return;
+        }
+
+        // Check if Inertia is imported
+        $hasInertiaImport = strpos($routesContent, "use Inertia\\Inertia;") !== false || 
+                            strpos($routesContent, "use Inertia\\Inertia as Inertia;") !== false;
+
+        // Prepare admin routes
+        $adminRoutes = "\n\n// Admin routes\n";
+        $adminRoutes .= "Route::prefix('admin')->name('admin.')->group(function () {\n";
+        $adminRoutes .= "    // Login routes (guest middleware)\n";
+        $adminRoutes .= "    Route::middleware(['guest'])->group(function () {\n";
+        $adminRoutes .= "        Route::get('/login', function () {\n";
+        $adminRoutes .= "            return \\Inertia\\Inertia::render('Auth/AdminLogin');\n";
+        $adminRoutes .= "        })->name('login');\n";
+        $adminRoutes .= "        \n";
+        $adminRoutes .= "        Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {\n";
+        $adminRoutes .= "            \$credentials = \$request->validate([\n";
+        $adminRoutes .= "                'email' => ['required', 'email'],\n";
+        $adminRoutes .= "                'password' => ['required'],\n";
+        $adminRoutes .= "            ]);\n";
+        $adminRoutes .= "            \n";
+        $adminRoutes .= "            if (\\Illuminate\\Support\\Facades\\Auth::attempt(\$credentials, \$request->boolean('remember'))) {\n";
+        $adminRoutes .= "                \$request->session()->regenerate();\n";
+        $adminRoutes .= "                return redirect()->intended('/admin');\n";
+        $adminRoutes .= "            }\n";
+        $adminRoutes .= "            \n";
+        $adminRoutes .= "            return back()->withErrors([\n";
+        $adminRoutes .= "                'email' => 'The provided credentials do not match our records.',\n";
+        $adminRoutes .= "            ])->onlyInput('email');\n";
+        $adminRoutes .= "        })->name('login');\n";
+        $adminRoutes .= "    });\n";
+        $adminRoutes .= "});\n";
+
+        // Add Inertia import if not present
+        if (!$hasInertiaImport) {
+            // Find the last use statement or add after <?php
+            if (preg_match('/^<\?php\s*\n/', $routesContent)) {
+                $routesContent = preg_replace(
+                    '/^(<\?php\s*\n)/',
+                    "$1use Inertia\\Inertia;\n",
+                    $routesContent
+                );
+            } else {
+                // Add after first line
+                $routesContent = preg_replace(
+                    '/^(<\?php[^\n]*\n)/',
+                    "$1use Inertia\\Inertia;\n",
+                    $routesContent
+                );
+            }
+        }
+
+        // Append admin routes to file
+        $routesContent .= $adminRoutes;
+        File::put($routesFile, $routesContent);
+        $this->info('✅ Added admin routes to routes/web.php');
+    }
+
+    /**
+     * Display admin route definitions for manual addition
+     */
+    protected function displayAdminRoutes(): void
+    {
+        $this->newLine();
+        $this->comment('Add these routes to your routes/web.php file:');
+        $this->newLine();
+        $this->line("use Inertia\\Inertia;");
+        $this->newLine();
+        $this->line("Route::prefix('admin')->name('admin.')->group(function () {");
+        $this->line("    // Login routes (guest middleware)");
+        $this->line("    Route::middleware(['guest'])->group(function () {");
+        $this->line("        Route::get('/login', function () {");
+        $this->line("            return Inertia::render('Auth/AdminLogin');");
+        $this->line("        })->name('login');");
+        $this->line("        ");
+        $this->line("        Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {");
+        $this->line("            \$credentials = \$request->validate([");
+        $this->line("                'email' => ['required', 'email'],");
+        $this->line("                'password' => ['required'],");
+        $this->line("            ]);");
+        $this->line("            ");
+        $this->line("            if (\\Illuminate\\Support\\Facades\\Auth::attempt(\$credentials, \$request->boolean('remember'))) {");
+        $this->line("                \$request->session()->regenerate();");
+        $this->line("                return redirect()->intended('/admin');");
+        $this->line("            }");
+        $this->line("            ");
+        $this->line("            return back()->withErrors([");
+        $this->line("                'email' => 'The provided credentials do not match our records.',");
+        $this->line("            ])->onlyInput('email');");
+        $this->line("        })->name('login');");
+        $this->line("    });");
+        $this->line("});");
+        $this->newLine();
     }
 
     /**
