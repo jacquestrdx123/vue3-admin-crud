@@ -38,6 +38,7 @@ class InertiaResourceServiceProvider extends ServiceProvider
             $this->commands([
                 \InertiaResource\Console\InstallCommand::class,
                 \InertiaResource\Console\CreateInertiaResourceCommand::class,
+                \InertiaResource\Console\CreateUserModelCommand::class,
                 \InertiaResource\Console\PublishAssetsCommand::class,
             ]);
         }

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2024-12-XX
+
+### Added
+
+- Added comprehensive documentation for `make:inertia-resource` command in README
+- Documented all command options: `--controller`, `--routes`, `--vue`, and `--all`
+- Added examples showing what gets generated for each option
+
+### Changed
+
+- Route generation now wraps all routes in `/admin` prefix for consistency with admin authentication
+- Route names changed from `vue.{slug}.{action}` to `admin.{slug}.{action}` pattern
+- Updated `routes.stub` to automatically wrap routes in `Route::prefix('admin')->name('admin.')`
+- Updated `CreateInertiaResourceCommand` to generate routes with admin prefix
+- Updated README examples to show correct admin prefix structure
+
+### Fixed
+
+- Route generation now properly matches admin authentication structure
+- Route name generation now uses `admin.` prefix instead of `vue.` prefix
+
 ## [2.3.0] - 2024-12-XX
 
 ### Fixed

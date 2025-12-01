@@ -264,7 +264,55 @@ Then configure the model in your config:
 
 ## Usage
 
-### Creating a Resource
+### Quick Resource Generation
+
+You can use the `make:inertia-resource` Artisan command to quickly generate a complete InertiaResource setup:
+
+```bash
+# Generate InertiaResource only
+php artisan make:inertia-resource User
+
+# Generate InertiaResource + Controller
+php artisan make:inertia-resource User --controller
+
+# Generate InertiaResource + Routes
+php artisan make:inertia-resource User --routes
+
+# Generate InertiaResource + Vue pages
+php artisan make:inertia-resource User --vue
+
+# Generate everything (Resource, Controller, Routes, and Vue pages)
+php artisan make:inertia-resource User --all
+```
+
+**Command Options:**
+
+- `--controller` - Generate the controller class
+- `--routes` - Generate route definitions (wrapped in `/admin` prefix)
+- `--vue` - Generate Vue page files (Index, Create, Edit, Show)
+- `--all` - Generate controller, routes, and Vue files
+
+**What Gets Generated:**
+
+- **InertiaResource**: `app/Support/Inertia/Resources/{Model}Resource.php`
+- **Controller**: `app/Http/Controllers/{Model}Controller.php` (if `--controller` or `--all`)
+- **Routes**: Added to `routes/web.php` wrapped in `/admin` prefix (if `--routes` or `--all`)
+- **Vue Pages**: `resources/js/Pages/Resources/{Model}/Index.vue`, `Create.vue`, `Edit.vue`, `Show.vue` (if `--vue` or `--all`)
+
+**Example:**
+
+```bash
+php artisan make:inertia-resource Product --all
+```
+
+This will create:
+
+- `app/Support/Inertia/Resources/ProductResource.php`
+- `app/Http/Controllers/ProductController.php`
+- Routes in `routes/web.php` under `/admin/products` prefix
+- Vue pages in `resources/js/Pages/Resources/Product/`
+
+### Creating a Resource Manually
 
 Create a resource class extending `InertiaResource\Inertia\InertiaResource`:
 
@@ -345,27 +393,40 @@ class InvoiceController extends BaseResourceController
 
     protected function getIndexRoute(): string
     {
-        return 'vue.invoices.index';
+        return 'admin.invoices.index';
     }
 }
 ```
 
 ### Routes
 
-Add routes for your resource:
+Add routes for your resource (wrapped in `/admin` prefix):
 
 ```php
-Route::prefix('invoices')->name('invoices.')->group(function () {
-    Route::get('/', [InvoiceController::class, 'index'])->name('index');
-    Route::get('/create', [InvoiceController::class, 'create'])->name('create');
-    Route::post('/', [InvoiceController::class, 'store'])->name('store');
-    Route::get('/{id}', [InvoiceController::class, 'show'])->name('show');
-    Route::get('/{id}/edit', [InvoiceController::class, 'edit'])->name('edit');
-    Route::put('/{id}', [InvoiceController::class, 'update'])->name('update');
-    Route::delete('/{id}', [InvoiceController::class, 'destroy'])->name('destroy');
-    Route::post('/bulk-action', [InvoiceController::class, 'bulkAction'])->name('bulk-action');
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::prefix('invoices')->name('invoices.')->middleware(['web'])->group(function () {
+        Route::get('/', [InvoiceController::class, 'index'])->name('index');
+        Route::get('/create', [InvoiceController::class, 'create'])->name('create');
+        Route::post('/', [InvoiceController::class, 'store'])->name('store');
+        Route::get('/{id}', [InvoiceController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [InvoiceController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [InvoiceController::class, 'update'])->name('update');
+        Route::delete('/{id}', [InvoiceController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-action', [InvoiceController::class, 'bulkAction'])->name('bulk-action');
+    });
 });
 ```
+
+**Route Names:**
+
+- `admin.invoices.index`
+- `admin.invoices.create`
+- `admin.invoices.store`
+- `admin.invoices.show`
+- `admin.invoices.edit`
+- `admin.invoices.update`
+- `admin.invoices.destroy`
+- `admin.invoices.bulk-action`
 
 ## Customization
 

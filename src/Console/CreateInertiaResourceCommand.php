@@ -145,7 +145,7 @@ class CreateInertiaResourceCommand extends Command
         $stub = str_replace('{{ model }}', $model, $stub);
         $stub = str_replace('{{ modelName }}', $modelName, $stub);
         $stub = str_replace('{{ routePrefix }}', $slug, $stub);
-        $stub = str_replace('{{ routeName }}', "vue.{$slug}", $stub);
+        $stub = str_replace('{{ routeName }}', "admin.{$slug}", $stub);
 
         File::put($filePath, $stub);
         $this->info("✅ Created {$controllerName}.php");
@@ -174,12 +174,13 @@ class CreateInertiaResourceCommand extends Command
         $stub = str_replace('{{ routePrefix }}', $slug, $stub);
         $stub = str_replace('{{ controllerNamespace }}', $controllerNamespace, $stub);
         $stub = str_replace('{{ controllerName }}', $controllerName, $stub);
-        $stub = str_replace('{{ routeName }}', "vue.{$slug}", $stub);
+        $stub = str_replace('{{ routeName }}', "admin.{$slug}", $stub);
 
         $routesContent = File::get($routesFile);
         
         // Check if routes already exist
-        if (strpos($routesContent, "Route::prefix('{$slug}')") !== false) {
+        if (strpos($routesContent, "Route::prefix('admin')->name('admin.')->group(function ()") !== false && 
+            strpos($routesContent, "Route::prefix('{$slug}')") !== false) {
             $this->warn("⚠️  Routes for '{$slug}' already exist in routes file. Skipping route generation.");
             $this->displayRoutes($modelName, $controllerName, $controllerNamespace, $slug);
             return;
@@ -197,21 +198,20 @@ class CreateInertiaResourceCommand extends Command
     protected function displayRoutes(string $modelName, string $controllerName, string $controllerNamespace, string $slug): void
     {
         $this->newLine();
-        $this->comment("Add these routes to your routes file (wrap in Route::prefix('vue') if needed):");
+        $this->comment("Add these routes to your routes file:");
         $this->newLine();
-        $this->line("Route::prefix('{$slug}')->name('{$slug}.')->middleware(['web'])->group(function () {");
-        $this->line("    Route::get('/', [{$controllerNamespace}\\{$controllerName}::class, 'index'])->name('index');");
-        $this->line("    Route::get('/create', [{$controllerNamespace}\\{$controllerName}::class, 'create'])->name('create');");
-        $this->line("    Route::post('/', [{$controllerNamespace}\\{$controllerName}::class, 'store'])->name('store');");
-        $this->line("    Route::get('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'show'])->name('show');");
-        $this->line("    Route::get('/{id}/edit', [{$controllerNamespace}\\{$controllerName}::class, 'edit'])->name('edit');");
-        $this->line("    Route::put('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'update'])->name('update');");
-        $this->line("    Route::delete('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'destroy'])->name('destroy');");
-        $this->line("    Route::post('/bulk-action', [{$controllerNamespace}\\{$controllerName}::class, 'bulkAction'])->name('bulk-action');");
+        $this->line("Route::prefix('admin')->name('admin.')->group(function () {");
+        $this->line("    Route::prefix('{$slug}')->name('{$slug}.')->middleware(['web'])->group(function () {");
+        $this->line("        Route::get('/', [{$controllerNamespace}\\{$controllerName}::class, 'index'])->name('index');");
+        $this->line("        Route::get('/create', [{$controllerNamespace}\\{$controllerName}::class, 'create'])->name('create');");
+        $this->line("        Route::post('/', [{$controllerNamespace}\\{$controllerName}::class, 'store'])->name('store');");
+        $this->line("        Route::get('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'show'])->name('show');");
+        $this->line("        Route::get('/{id}/edit', [{$controllerNamespace}\\{$controllerName}::class, 'edit'])->name('edit');");
+        $this->line("        Route::put('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'update'])->name('update');");
+        $this->line("        Route::delete('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'destroy'])->name('destroy');");
+        $this->line("        Route::post('/bulk-action', [{$controllerNamespace}\\{$controllerName}::class, 'bulkAction'])->name('bulk-action');");
+        $this->line("    });");
         $this->line("});");
-        $this->newLine();
-        $this->comment("Note: If your controller uses 'vue.{$slug}.index', wrap the above in:");
-        $this->comment("Route::prefix('vue')->name('vue.')->group(function () { ... });");
         $this->newLine();
     }
 
