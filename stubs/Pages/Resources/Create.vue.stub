@@ -39,15 +39,15 @@
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
-import TextField from '@/Components/Form/TextField.vue'
-import SelectField from '@/Components/Form/SelectField.vue'
-import TextareaField from '@/Components/Form/TextareaField.vue'
-import DateField from '@/Components/Form/DateField.vue'
-import NumberField from '@/Components/Form/NumberField.vue'
-import ToggleField from '@/Components/Form/ToggleField.vue'
-import CheckboxField from '@/Components/Form/CheckboxField.vue'
-import MultiSelectField from '@/Components/Form/MultiSelectField.vue'
-import FileUploadField from '@/Components/Form/FileUploadField.vue'
+import TextField from '@/vendor/inertia-resource/Components/Form/TextField.vue'
+import SelectField from '@/vendor/inertia-resource/Components/Form/SelectField.vue'
+import TextareaField from '@/vendor/inertia-resource/Components/Form/TextareaField.vue'
+import DateField from '@/vendor/inertia-resource/Components/Form/DateField.vue'
+import NumberField from '@/vendor/inertia-resource/Components/Form/NumberField.vue'
+import ToggleField from '@/vendor/inertia-resource/Components/Form/ToggleField.vue'
+import CheckboxField from '@/vendor/inertia-resource/Components/Form/CheckboxField.vue'
+import MultiSelectField from '@/vendor/inertia-resource/Components/Form/MultiSelectField.vue'
+import FileUploadField from '@/vendor/inertia-resource/Components/Form/FileUploadField.vue'
 
 const props = defineProps({
   fields: { type: Array, default: () => [] },
