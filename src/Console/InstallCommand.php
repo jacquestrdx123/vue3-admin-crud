@@ -488,7 +488,7 @@ CSS;
         
         // Check if admin routes already exist
         $routesExist = strpos($routesContent, "Route::prefix('admin')") !== false || 
-                       strpos($routesContent, "Route::get('/admin/login'") !== false ||
+            strpos($routesContent, "Route::get('/admin/login'") !== false ||
                        strpos($routesContent, "->name('admin.login')") !== false;
         
         // Check if routes need to be updated (old guard code)
@@ -521,6 +521,13 @@ CSS;
                     $routesContent
                 );
                 
+                // Fix error handling to use ValidationException for better Inertia support
+                $routesContent = preg_replace(
+                    "/return back\(\)->withErrors\(\[[\s\S]*?\]\)->onlyInput\(['\"]email['\"]\);/",
+                    "throw \\Illuminate\\Validation\\ValidationException::withMessages([\n                'email' => 'The provided credentials do not match our records.',\n            ]);",
+                    $routesContent
+                );
+                
                 // Update comment if it exists
                 $routesContent = preg_replace(
                     "/\/\/ Protected admin routes \(auth:user guard\)/",
@@ -532,8 +539,8 @@ CSS;
                 $this->info('✅ Updated admin routes to use default auth guard.');
                 return;
             } else {
-                $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
-                return;
+            $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
+            return;
             }
         }
 
@@ -561,9 +568,9 @@ CSS;
         $adminRoutes .= "                return redirect()->intended(route('admin.dashboard'));\n";
         $adminRoutes .= "            }\n";
         $adminRoutes .= "            \n";
-        $adminRoutes .= "            return back()->withErrors([\n";
+        $adminRoutes .= "            throw \\Illuminate\\Validation\\ValidationException::withMessages([\n";
         $adminRoutes .= "                'email' => 'The provided credentials do not match our records.',\n";
-        $adminRoutes .= "            ])->onlyInput('email');\n";
+        $adminRoutes .= "            ]);\n";
         $adminRoutes .= "        })->name('login');\n";
         $adminRoutes .= "    });\n";
         $adminRoutes .= "    \n";
@@ -628,9 +635,9 @@ CSS;
         $this->line("                return redirect()->intended(route('admin.dashboard'));");
         $this->line("            }");
         $this->line("            ");
-        $this->line("            return back()->withErrors([");
+        $this->line("            throw \\Illuminate\\Validation\\ValidationException::withMessages([");
         $this->line("                'email' => 'The provided credentials do not match our records.',");
-        $this->line("            ])->onlyInput('email');");
+        $this->line("            ]);");
         $this->line("        })->name('login');");
         $this->line("    });");
         $this->line("    ");
