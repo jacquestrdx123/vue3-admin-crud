@@ -7,9 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2024-12-XX
+
+### Fixed
+
+- Fixed "View [app] not found" error by automatically creating Inertia root template (`resources/views/app.blade.php`) during installation
+- Added automatic creation of JavaScript entry point (`resources/js/app.js`) during installation
+- Added automatic creation of `resources/js/bootstrap.js` for axios setup
+- Added automatic creation of `resources/css/app.css` with Tailwind import if missing
+
+### Added
+
+- New stubs: `app.blade.php.stub` and `app.js.stub` for Inertia setup
+- InstallCommand now creates all required Inertia files automatically:
+  - `resources/views/app.blade.php` (Inertia root template)
+  - `resources/js/app.js` (JavaScript entry point)
+  - `resources/js/bootstrap.js` (Axios setup)
+  - `resources/css/app.css` (CSS entry point with Tailwind)
+
 ## [2.1.0] - 2024-12-XX
 
 ### Fixed
+
 - Fixed vite.config.js detection to properly handle Laravel 12's default configuration
 - Added detection for missing `{ refreshPaths }` import when `laravel-vite-plugin` is imported
 - Added automatic detection and addition of Vue plugin if missing from vite.config.js
@@ -18,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed issue where existing vite.config.js files weren't being properly updated with required configurations
 
 ### Changed
+
 - Enhanced `fixViteConfig()` method to handle more edge cases and missing configurations
 - Improved error messages and warnings for vite.config.js fixes
 

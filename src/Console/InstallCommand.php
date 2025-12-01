@@ -47,6 +47,16 @@ class InstallCommand extends Command
         ]);
         $this->newLine();
 
+        // Create Inertia root template
+        $this->info('📄 Creating Inertia root template...');
+        $this->createInertiaRootTemplate();
+        $this->newLine();
+
+        // Create JavaScript entry point
+        $this->info('📜 Creating JavaScript entry point...');
+        $this->createJavaScriptEntryPoint();
+        $this->newLine();
+
         // Create login pages
         $this->info('🔐 Creating login pages...');
         $this->createLoginPages();
@@ -183,6 +193,88 @@ class InstallCommand extends Command
                 File::copy($packageConfigPath, $tailwindConfigPath);
                 $this->info('Published tailwind.config.js');
             }
+        }
+    }
+
+    /**
+     * Create Inertia root template
+     */
+    protected function createInertiaRootTemplate(): void
+    {
+        $viewsPath = resource_path('views');
+        $appBladePath = $viewsPath.'/app.blade.php';
+        $appBladeStub = __DIR__.'/../../stubs/app.blade.php.stub';
+
+        // Create views directory if it doesn't exist
+        if (!File::exists($viewsPath)) {
+            File::makeDirectory($viewsPath, 0755, true);
+        }
+
+        if (File::exists($appBladeStub)) {
+            if (File::exists($appBladePath)) {
+                $this->warn('app.blade.php already exists. Skipping...');
+            } else {
+                File::copy($appBladeStub, $appBladePath);
+                $this->info('Created app.blade.php');
+            }
+        } else {
+            $this->warn('⚠️  app.blade.php.stub not found. Please create resources/views/app.blade.php manually.');
+        }
+    }
+
+    /**
+     * Create JavaScript entry point
+     */
+    protected function createJavaScriptEntryPoint(): void
+    {
+        $jsPath = resource_path('js');
+        $cssPath = resource_path('css');
+        $appJsPath = $jsPath.'/app.js';
+        $bootstrapJsPath = $jsPath.'/bootstrap.js';
+        $appCssPath = $cssPath.'/app.css';
+        $appJsStub = __DIR__.'/../../stubs/app.js.stub';
+
+        // Create js directory if it doesn't exist
+        if (!File::exists($jsPath)) {
+            File::makeDirectory($jsPath, 0755, true);
+        }
+
+        // Create css directory if it doesn't exist
+        if (!File::exists($cssPath)) {
+            File::makeDirectory($cssPath, 0755, true);
+        }
+
+        // Create app.js
+        if (File::exists($appJsStub)) {
+            if (File::exists($appJsPath)) {
+                $this->warn('app.js already exists. Skipping...');
+            } else {
+                File::copy($appJsStub, $appJsPath);
+                $this->info('Created app.js');
+            }
+        } else {
+            $this->warn('⚠️  app.js.stub not found. Please create resources/js/app.js manually.');
+        }
+
+        // Create bootstrap.js if it doesn't exist
+        if (!File::exists($bootstrapJsPath)) {
+            $bootstrapContent = <<<'JS'
+import axios from 'axios';
+window.axios = axios;
+
+window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+JS;
+            File::put($bootstrapJsPath, $bootstrapContent);
+            $this->info('Created bootstrap.js');
+        }
+
+        // Create app.css if it doesn't exist
+        if (!File::exists($appCssPath)) {
+            $appCssContent = <<<'CSS'
+@import "tailwindcss";
+CSS;
+            File::put($appCssPath, $appCssContent);
+            $this->info('Created app.css');
         }
     }
 
