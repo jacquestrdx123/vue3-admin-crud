@@ -1,0 +1,68 @@
+{
+    "name": "jacquestrdx/vue3-admin-crud",
+    "description": "A Filament-like resource system for Inertia.js applications. Provides complete CRUD interface system with tables, forms, filters, actions, and more.",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "inertia",
+        "inertiajs",
+        "vue",
+        "admin",
+        "crud",
+        "resource",
+        "filament",
+        "tailwind"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jacques Tredoux",
+            "email": "jacques@example.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "laravel/framework": "^12.0",
+        "inertiajs/inertia-laravel": "^1.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0",
+        "phpunit/phpunit": "^10.0",
+        "pestphp/pest": "^2.0",
+        "pestphp/pest-plugin-laravel": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "InertiaResource\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "InertiaResource\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "InertiaResource\\InertiaResourceServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "test-coverage": "pest --coverage",
+        "post-install-cmd": [
+            "@php scripts/install.php"
+        ],
+        "post-update-cmd": [
+            "@php scripts/install.php"
+        ]
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts-descriptions": {
+        "post-install-cmd": "Publishes package assets after installation",
+        "post-update-cmd": "Publishes package assets after update"
+    }
+}
+

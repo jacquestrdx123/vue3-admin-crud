@@ -1,0 +1,37 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Source files
+*.php text eol=lf
+*.js text eol=lf
+*.vue text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Ensure files are always exported correctly
+composer.json export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore
+.phpunit.xml export-ignore
+phpunit.xml export-ignore
+
+# Exclude dev files from releases
+tests/ export-ignore
+.stubs/ export-ignore
+node_modules/ export-ignore
+vendor/ export-ignore
+.idea/ export-ignore
+.vscode/ export-ignore
+.phpunit.cache/ export-ignore
+.phpunit.result.cache/ export-ignore
+coverage/ export-ignore
+
+# Documentation
+README.md export-text
+CHANGELOG.md export-text
+LICENSE export-text
+

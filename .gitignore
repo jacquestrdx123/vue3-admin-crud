@@ -1,0 +1,27 @@
+/vendor/
+/.idea/
+/.vscode/
+composer.lock
+.DS_Store
+*.log
+.phpunit.cache/
+.phpunit.result.cache
+coverage/
+.php-cs-fixer.cache
+
+# Build artifacts
+/node_modules/
+/build/
+/dist/
+
+# IDE
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+Thumbs.db
+

@@ -1,0 +1,122 @@
+<template>
+  <AdminLayout>
+    <div class="py-6">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6">
+          <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ title || 'Create Resource' }}</h1>
+        </div>
+        <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg">
+          <form @submit.prevent="submit" class="p-6">
+            <div class="grid grid-cols-12 gap-6">
+              <template v-for="field in fields" :key="field.name">
+                <component
+                  :is="getFieldComponent(field.type)"
+                  v-model="form[field.name]"
+                  v-bind="field"
+                  :error-messages="form.errors[field.name]"
+                  :form-data="form"
+                />
+              </template>
+            </div>
+            <div class="mt-6 flex items-center justify-end gap-3">
+              <Link :href="getIndexRoute()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                :disabled="form.processing"
+                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-ciba-green/90 disabled:opacity-50"
+              >
+                {{ form.processing ? 'Creating...' : 'Create' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </AdminLayout>
+</template>
+<script setup>
+import { useForm, Link } from '@inertiajs/vue3'
+import AdminLayout from '@/Layouts/AdminLayout.vue'
+import TextField from '@/Components/Form/TextField.vue'
+import SelectField from '@/Components/Form/SelectField.vue'
+import TextareaField from '@/Components/Form/TextareaField.vue'
+import DateField from '@/Components/Form/DateField.vue'
+import NumberField from '@/Components/Form/NumberField.vue'
+import ToggleField from '@/Components/Form/ToggleField.vue'
+import CheckboxField from '@/Components/Form/CheckboxField.vue'
+import MultiSelectField from '@/Components/Form/MultiSelectField.vue'
+import FileUploadField from '@/Components/Form/FileUploadField.vue'
+
+const props = defineProps({
+  fields: { type: Array, default: () => [] },
+  resourceSlug: { type: String, default: null },
+  title: { type: String, default: null }
+})
+
+const formData = {}
+props.fields.forEach(field => {
+  formData[field.name] = field.default || field.value || null
+})
+
+const form = useForm(formData)
+
+const getFieldComponent = (type) => {
+  const map = {
+    text: TextField,
+    email: TextField,
+    select: SelectField,
+    textarea: TextareaField,
+    date: DateField,
+    datetime: DateField,
+    number: NumberField,
+    toggle: ToggleField,
+    checkbox: CheckboxField,
+    'multi-select': MultiSelectField,
+    file: FileUploadField,
+    'file-upload': FileUploadField
+  }
+  return map[type] || TextField
+}
+
+const getStoreRoute = () => {
+  if (!props.resourceSlug) {
+    const currentRoute = route().current()
+    if (currentRoute) {
+      const parts = currentRoute.split('.')
+      if (parts.length >= 2) {
+        const resource = parts.slice(0, -1).join('.')
+        return `${resource}.store`
+      }
+    }
+    return null
+  }
+  return `vue.${props.resourceSlug}.store`
+}
+
+const getIndexRoute = () => {
+  if (!props.resourceSlug) {
+    const currentRoute = route().current()
+    if (currentRoute) {
+      const parts = currentRoute.split('.')
+      if (parts.length >= 2) {
+        const resource = parts.slice(0, -1).join('.')
+        return `${resource}.index`
+      }
+    }
+    return '#'
+  }
+  return route(`vue.${props.resourceSlug}.index`)
+}
+
+const submit = () => {
+  const routeName = getStoreRoute()
+  if (routeName && route(routeName)) {
+    form.post(route(routeName), {
+      preserveScroll: true
+    })
+  }
+}
+</script>
+

@@ -1,0 +1,30 @@
+{
+  "name": "vue-admin-panel",
+  "version": "1.0.0",
+  "description": "Vue Admin Panel - Laravel package dependencies",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install-deps": "npm install"
+  },
+  "dependencies": {
+    "vue": "^3.4.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "@inertiajs/vue3": "^1.0.0",
+    "@headlessui/vue": "^1.7.21",
+    "@heroicons/vue": "^2.1.1",
+    "axios": "^1.7.7"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "laravel-vite-plugin": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

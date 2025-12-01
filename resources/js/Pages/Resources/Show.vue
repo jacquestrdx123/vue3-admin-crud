@@ -1,0 +1,131 @@
+<template>
+  <AdminLayout>
+    <div class="py-6">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6 flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ title || 'Resource Details' }}</h1>
+          </div>
+          <div class="flex items-center gap-3">
+            <Link
+              :href="getEditRoute()"
+              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-ciba-green/90"
+            >
+              Edit
+            </Link>
+            <button
+              @click="deleteItem"
+              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2">
+            <Card title="Details">
+              <dl class="grid grid-cols-2 gap-4">
+                <template v-for="field in fields" :key="field.name">
+                  <div :class="field.type === 'textarea' ? 'col-span-2' : ''">
+                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ field.label }}</dt>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                      <span v-if="field.type === 'boolean'">
+                        <Badge :color="item[field.name] ? 'green' : 'gray'">
+                          {{ item[field.name] ? 'Yes' : 'No' }}
+                        </Badge>
+                      </span>
+                      <span v-else-if="field.type === 'date'">{{ formatDate(item[field.name]) }}</span>
+                      <span v-else-if="field.type === 'money'">{{ formatMoney(item[field.name]) }}</span>
+                      <span v-else :class="field.type === 'textarea' ? 'whitespace-pre-wrap' : ''">
+                        {{ item[field.name] || '-' }}
+                      </span>
+                    </dd>
+                  </div>
+                </template>
+              </dl>
+            </Card>
+          </div>
+          <div>
+            <Card title="Actions">
+              <div class="space-y-2">
+                <Link
+                  :href="getEditRoute()"
+                  class="block w-full px-4 py-2 text-sm text-center text-white bg-indigo-600 rounded-md hover:bg-ciba-green/90"
+                >
+                  Edit
+                </Link>
+                <button
+                  @click="deleteItem"
+                  class="block w-full px-4 py-2 text-sm text-center text-white bg-red-600 rounded-md hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  </AdminLayout>
+</template>
+<script setup>
+import { router, Link } from '@inertiajs/vue3'
+import AdminLayout from '@/Layouts/AdminLayout.vue'
+import Card from '@/Components/UI/Card.vue'
+import Badge from '@/Components/UI/Badge.vue'
+
+const props = defineProps({
+  item: { type: Object, required: true },
+  fields: { type: Array, default: () => [] },
+  resourceSlug: { type: String, default: null },
+  title: { type: String, default: null }
+})
+
+const formatDate = (date) => {
+  return date ? new Date(date).toLocaleDateString() : '-'
+}
+
+const formatMoney = (amount) => {
+  return amount ? `R ${parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}` : 'R 0.00'
+}
+
+const getDestroyRoute = () => {
+  if (!props.resourceSlug) {
+    const currentRoute = route().current()
+    if (currentRoute) {
+      const parts = currentRoute.split('.')
+      if (parts.length >= 2) {
+        const resource = parts.slice(0, -1).join('.')
+        return `${resource}.destroy`
+      }
+    }
+    return null
+  }
+  return `vue.${props.resourceSlug}.destroy`
+}
+
+const getEditRoute = () => {
+  if (!props.resourceSlug) {
+    const currentRoute = route().current()
+    if (currentRoute) {
+      const parts = currentRoute.split('.')
+      if (parts.length >= 2) {
+        const resource = parts.slice(0, -1).join('.')
+        return route(`${resource}.edit`, props.item.id)
+      }
+    }
+    return '#'
+  }
+  return route(`vue.${props.resourceSlug}.edit`, props.item.id)
+}
+
+const deleteItem = () => {
+  if (confirm('Are you sure you want to delete this item?')) {
+    const routeName = getDestroyRoute()
+    if (routeName && route(routeName)) {
+      router.delete(route(routeName, props.item.id))
+    }
+  }
+}
+</script>
+

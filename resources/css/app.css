@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+/* Custom styles for vue-admin-panel */
+@layer base {
+    html {
+        @apply antialiased;
+    }
+}
+
+@layer components {
+    /* Add component-level styles here */
+}
+
+@layer utilities {
+    /* Add utility-level styles here */
+}
