@@ -23,6 +23,7 @@ composer require jacquestrdx123/vue3-admin-crud
 ```
 
 This will automatically:
+
 - ✅ Install all PHP/Laravel dependencies via Composer
 - ✅ Update your `package.json` with Vue 3 and Tailwind CSS 4 dependencies
 - ✅ Set up the package structure
@@ -57,37 +58,82 @@ php artisan vendor:publish --tag=inertia-resource-tailwind    # Tailwind config 
 Update your `vite.config.js` to include Tailwind CSS 4 and Vue support:
 
 ```javascript
-import { defineConfig } from 'vite';
-import laravel from 'laravel/vite-plugin';
-import vue from '@vitejs/plugin-vue';
-import tailwindcss from '@tailwindcss/vite';
+import { defineConfig } from "vite";
+import laravel from "laravel/vite-plugin";
+import vue from "@vitejs/plugin-vue";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-    plugins: [
-        laravel({
-            input: [
-                'resources/css/app.css',
-                'resources/js/app.js'
-            ],
-            refresh: true,
-        }),
-        vue({
-            template: {
-                transformAssetUrls: {
-                    base: null,
-                    includeAbsolute: false,
-                },
-            },
-        }),
-        tailwindcss(),
-    ],
-    resolve: {
-        alias: {
-            '@': '/resources/js',
+  plugins: [
+    laravel({
+      input: ["resources/css/app.css", "resources/js/app.js"],
+      refresh: true,
+    }),
+    vue({
+      template: {
+        transformAssetUrls: {
+          base: null,
+          includeAbsolute: false,
         },
+      },
+    }),
+    tailwindcss(),
+  ],
+  resolve: {
+    alias: {
+      "@": "/resources/js",
     },
+  },
 });
 ```
+
+## Updating the Package
+
+When you update the package to a new version, you may need to republish assets to get the latest Vue components, configuration files, or other assets.
+
+### Republish Assets After Update
+
+After updating the package via Composer:
+
+```bash
+composer update jacquestrdx123/vue3-admin-crud
+```
+
+Republish assets using one of these methods:
+
+#### Option 1: Use the Publish Command (Recommended)
+
+```bash
+# Republish all assets (will skip existing files)
+php artisan vue-admin-panel:publish
+
+# Force republish all assets (overwrites existing files)
+php artisan vue-admin-panel:publish --force
+```
+
+#### Option 2: Use Laravel's Vendor Publish Command
+
+```bash
+# Republish all assets (will skip existing files)
+php artisan vendor:publish --tag=inertia-resource
+
+# Force republish all assets (overwrites existing files)
+php artisan vendor:publish --tag=inertia-resource --force
+
+# Republish specific asset groups
+php artisan vendor:publish --tag=inertia-resource-components --force  # Vue components only
+php artisan vendor:publish --tag=inertia-resource-config --force      # Config only
+php artisan vendor:publish --tag=inertia-resource-tailwind --force    # Tailwind config only
+```
+
+### What Gets Republished?
+
+- **Vue Components**: Latest versions of table, form, and UI components
+- **Configuration**: Updated config file (if you use `--force`)
+- **Tailwind Config**: Updated Tailwind configuration (if you use `--force`)
+- **CSS Assets**: Updated CSS files
+
+> **Note**: Without `--force`, Laravel will skip files that already exist. Use `--force` to overwrite existing files with the latest versions from the package.
 
 ### CSS Setup
 
@@ -110,10 +156,10 @@ After publishing, components will be available at `resources/js/vendor/inertia-r
 
 ```javascript
 // In your page components
-import BaseDataTable from '@/vendor/inertia-resource/Components/Table/BaseDataTable.vue'
-import FormBuilder from '@/vendor/inertia-resource/Components/Form/FormBuilder.vue'
-import TextField from '@/vendor/inertia-resource/Components/Form/TextField.vue'
-import SelectField from '@/vendor/inertia-resource/Components/Form/SelectField.vue'
+import BaseDataTable from "@/vendor/inertia-resource/Components/Table/BaseDataTable.vue";
+import FormBuilder from "@/vendor/inertia-resource/Components/Form/FormBuilder.vue";
+import TextField from "@/vendor/inertia-resource/Components/Form/TextField.vue";
+import SelectField from "@/vendor/inertia-resource/Components/Form/SelectField.vue";
 ```
 
 ## Configuration
@@ -364,4 +410,5 @@ For detailed documentation, see the [PACKAGE_SUMMARY.md](PACKAGE_SUMMARY.md) fil
 ## License
 
 MIT
+
 # vue3-admin-crud
