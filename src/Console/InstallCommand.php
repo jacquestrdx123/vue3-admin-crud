@@ -246,30 +246,79 @@ class InstallCommand extends Command
         }
 
         $viteConfigContent = File::get($viteConfigPath);
+        $needsFix = false;
+        $fixedContent = $viteConfigContent;
         
-        // Check for incorrect import: import laravel from 'laravel-vite-plugin';
-        if (str_contains($viteConfigContent, "from 'laravel-vite-plugin'") || 
-            str_contains($viteConfigContent, 'from "laravel-vite-plugin"')) {
+        // Check for incorrect import: @laravel/vite-plugin (doesn't exist)
+        if (str_contains($viteConfigContent, '@laravel/vite-plugin')) {
+            $this->warn('⚠️  Found incorrect import in vite.config.js: @laravel/vite-plugin');
+            $this->comment('   Fixing to: laravel-vite-plugin');
             
-            $this->warn('⚠️  Found incorrect import in vite.config.js: laravel-vite-plugin');
-            $this->comment('   The correct import should be: laravel/vite-plugin');
-            
-            // Fix the import
+            // Fix the import - handle both single and named imports
             $fixedContent = preg_replace(
-                "/import\s+laravel\s+from\s+['\"]laravel-vite-plugin['\"]/",
-                "import laravel from 'laravel/vite-plugin'",
-                $viteConfigContent
+                "/import\s+laravel(?:\s*,\s*\{[^}]*\})?\s+from\s+['\"]@laravel\/vite-plugin['\"]/",
+                "import laravel, { refreshPaths } from 'laravel-vite-plugin'",
+                $fixedContent
             );
             
-            if ($fixedContent !== $viteConfigContent) {
-                File::put($viteConfigPath, $fixedContent);
-                $this->info('✅ Fixed vite.config.js import statement.');
-            } else {
-                $this->warn('⚠️  Could not automatically fix vite.config.js. Please update manually:');
-                $this->comment('   Change: import laravel from \'laravel-vite-plugin\';');
-                $this->comment('   To:     import laravel from \'laravel/vite-plugin\';');
+            // Also fix simple imports
+            $fixedContent = preg_replace(
+                "/import\s+laravel\s+from\s+['\"]@laravel\/vite-plugin['\"]/",
+                "import laravel, { refreshPaths } from 'laravel-vite-plugin'",
+                $fixedContent
+            );
+            
+            $needsFix = true;
+        }
+        
+        // Check for old import: laravel/vite-plugin (old pattern)
+        if (str_contains($fixedContent, "from 'laravel/vite-plugin'") || 
+            str_contains($fixedContent, 'from "laravel/vite-plugin"')) {
+            
+            if (!$needsFix) {
+                $this->warn('⚠️  Found old import pattern in vite.config.js: laravel/vite-plugin');
+                $this->comment('   Updating to: laravel-vite-plugin');
             }
-        } elseif (str_contains($viteConfigContent, 'laravel/vite-plugin')) {
+            
+            // Fix the import to use the correct package name
+            $fixedContent = preg_replace(
+                "/import\s+laravel(?:\s*,\s*\{[^}]*\})?\s+from\s+['\"]laravel\/vite-plugin['\"]/",
+                "import laravel, { refreshPaths } from 'laravel-vite-plugin'",
+                $fixedContent
+            );
+            
+            // Also fix simple imports
+            $fixedContent = preg_replace(
+                "/import\s+laravel\s+from\s+['\"]laravel\/vite-plugin['\"]/",
+                "import laravel, { refreshPaths } from 'laravel-vite-plugin'",
+                $fixedContent
+            );
+            
+            $needsFix = true;
+        }
+        
+        // Check if refresh is set to true instead of refreshPaths
+        if (str_contains($fixedContent, "refresh: true") && 
+            str_contains($fixedContent, "from 'laravel-vite-plugin'")) {
+            
+            if (!$needsFix) {
+                $this->comment('Updating refresh configuration...');
+            }
+            
+            $fixedContent = preg_replace(
+                "/refresh:\s*true/",
+                "refresh: refreshPaths",
+                $fixedContent
+            );
+            
+            $needsFix = true;
+        }
+        
+        if ($needsFix && $fixedContent !== $viteConfigContent) {
+            File::put($viteConfigPath, $fixedContent);
+            $this->info('✅ Fixed vite.config.js import and configuration.');
+        } elseif (str_contains($viteConfigContent, "from 'laravel-vite-plugin'") || 
+                   str_contains($viteConfigContent, 'from "laravel-vite-plugin"')) {
             $this->comment('✓ vite.config.js already has correct import.');
         }
     }

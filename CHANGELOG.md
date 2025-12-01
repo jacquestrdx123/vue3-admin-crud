@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.5] - 2024-12-XX
 
 ### Fixed
+
 - Updated to Vite 5.4.0 with laravel-vite-plugin@^1.0.0 for full Vite 5 support
 - Updated vite.config.js stub to use correct import: `import laravel, { refreshPaths } from 'laravel-vite-plugin'`
 - Updated vite.config.js to use `refresh: refreshPaths` instead of `refresh: true`
