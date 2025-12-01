@@ -860,11 +860,15 @@ CSS;
         $dashboardPath = $pagesPath.'/Dashboard.vue';
         if (File::exists($dashboardStub)) {
             if (File::exists($dashboardPath)) {
-                $this->warn('Dashboard.vue already exists. Skipping...');
+                // Always update Dashboard.vue to ensure it exists and is up to date
+                File::copy($dashboardStub, $dashboardPath);
+                $this->info('Updated Dashboard.vue');
             } else {
                 File::copy($dashboardStub, $dashboardPath);
                 $this->info('Created Dashboard.vue');
             }
+        } else {
+            $this->warn('⚠️  Dashboard.vue.stub not found. Please create resources/js/Pages/Dashboard.vue manually.');
         }
 
         // StatCard Component

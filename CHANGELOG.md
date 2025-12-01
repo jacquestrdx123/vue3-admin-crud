@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.5] - 2024-12-XX
+
+### Fixed
+
+- Fixed Dashboard.vue not being created/updated during installation
+- InstallCommand now always ensures Dashboard.vue exists (updates if already exists)
+- Resolved "Page not found: ./Pages/Dashboard.vue" error
+
 ## [2.4.4] - 2024-12-XX
 
 ### Added
