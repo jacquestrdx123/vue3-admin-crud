@@ -179,7 +179,12 @@ const toggleUserMenu = () => {
 
 const logout = () => {
   showUserMenu.value = false
-  router.post('/admin/logout')
+  // Use direct URL for logout to avoid dependency on route helper
+  router.post('/admin/logout', {}, {
+    onFinish: () => {
+      // Redirect handled by server
+    }
+  })
 }
 
 // Close user menu when clicking outside

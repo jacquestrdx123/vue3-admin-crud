@@ -491,8 +491,11 @@ CSS;
             strpos($routesContent, "Route::get('/admin/login'") !== false ||
                        strpos($routesContent, "->name('admin.login')") !== false;
         
-        // Check if routes need to be updated (old guard code)
+        // Check if routes need to be updated (old guard code or missing logout route)
         $needsUpdate = false;
+        $needsLogoutRoute = false;
+        $needsApiRoutes = false;
+        
         if ($routesExist) {
             // Check for old guard code that needs fixing
             if (strpos($routesContent, "Auth::guard('user')") !== false || 
@@ -534,13 +537,61 @@ CSS;
                     "// Protected admin routes (auth middleware - uses default web guard)",
                     $routesContent
                 );
+            }
+            
+            // Check if logout route exists
+            if (strpos($routesContent, "->name('admin.logout')") === false && 
+                strpos($routesContent, "Route::post('/logout'") === false) {
+                $needsLogoutRoute = true;
+                $needsUpdate = true;
+            }
+            
+            // Check if API routes exist
+            if (strpos($routesContent, 'UserColumnPreferenceController') === false) {
+                $needsApiRoutes = true;
+                $needsUpdate = true;
+            }
+            
+            if ($needsUpdate) {
+                // Add logout route if missing
+                if ($needsLogoutRoute) {
+                    // Find the dashboard route and add logout after it
+                    if (preg_match("/(Route::get\('\/',[^}]+\)->name\('dashboard'\);)/", $routesContent, $matches)) {
+                        $logoutRoute = "\n        Route::post('/logout', function (\\Illuminate\\Http\\Request \$request) {\n";
+                        $logoutRoute .= "            \\Illuminate\\Support\\Facades\\Auth::logout();\n";
+                        $logoutRoute .= "            \$request->session()->invalidate();\n";
+                        $logoutRoute .= "            \$request->session()->regenerateToken();\n";
+                        $logoutRoute .= "            return redirect()->route('admin.login');\n";
+                        $logoutRoute .= "        })->name('logout');\n";
+                        $routesContent = preg_replace(
+                            "/(Route::get\('\/',[^}]+\)->name\('dashboard'\);)/",
+                            "$1" . $logoutRoute,
+                            $routesContent
+                        );
+                    }
+                }
+                
+                // Add API routes if missing
+                if ($needsApiRoutes) {
+                    $apiRoutes = "\n\n// API routes for column preferences\n";
+                    $apiRoutes .= "Route::prefix('api')->middleware(['auth', 'web'])->group(function () {\n";
+                    $apiRoutes .= "    Route::get('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'show']);\n";
+                    $apiRoutes .= "    Route::post('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'store']);\n";
+                    $apiRoutes .= "    Route::delete('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'destroy']);\n";
+                    $apiRoutes .= "});\n";
+                    $routesContent .= $apiRoutes;
+                }
                 
                 File::put($routesFile, $routesContent);
-                $this->info('✅ Updated admin routes to use default auth guard.');
+                if ($needsLogoutRoute || $needsApiRoutes) {
+                    $this->info('✅ Updated admin routes with logout and API routes.');
+                } else {
+                    $this->info('✅ Updated admin routes to use default auth guard.');
+                }
                 return;
             } else {
-            $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
-            return;
+                $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
+                return;
             }
         }
 
@@ -610,6 +661,18 @@ CSS;
 
         // Append admin routes to file
         $routesContent .= $adminRoutes;
+        
+        // Add API routes for column preferences if they don't exist
+        if (strpos($routesContent, 'UserColumnPreferenceController') === false) {
+            $apiRoutes = "\n\n// API routes for column preferences\n";
+            $apiRoutes .= "Route::prefix('api')->middleware(['auth', 'web'])->group(function () {\n";
+            $apiRoutes .= "    Route::get('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'show']);\n";
+            $apiRoutes .= "    Route::post('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'store']);\n";
+            $apiRoutes .= "    Route::delete('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'destroy']);\n";
+            $apiRoutes .= "});\n";
+            $routesContent .= $apiRoutes;
+        }
+        
         File::put($routesFile, $routesContent);
         $this->info('✅ Added admin routes to routes/web.php');
     }
