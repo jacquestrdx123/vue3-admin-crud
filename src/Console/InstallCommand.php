@@ -59,10 +59,17 @@ class InstallCommand extends Command
         passthru('npm install', $returnCode);
         
         if ($returnCode !== 0) {
-            $this->error('❌ npm install failed. Please run it manually: npm install');
+            $this->warn('⚠️  First npm install attempt failed. Trying with --legacy-peer-deps...');
             $this->newLine();
-            $this->warn('⚠️  Important: You must run "npm install" before using Vite or building assets.');
-            return 1;
+            
+            passthru('npm install --legacy-peer-deps', $returnCode);
+            
+            if ($returnCode !== 0) {
+                $this->error('❌ npm install failed. Please run it manually: npm install --legacy-peer-deps');
+                $this->newLine();
+                $this->warn('⚠️  Important: You must run "npm install" before using Vite or building assets.');
+                return 1;
+            }
         }
         
         $this->newLine();
@@ -106,7 +113,7 @@ class InstallCommand extends Command
         ];
 
         $packageDevDependencies = [
-            'vite' => '^5.4.0',
+            'vite' => '^4.5.0',
             'laravel-vite-plugin' => '^0.7.2',
         ];
 

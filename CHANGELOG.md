@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.5] - 2024-12-XX
+
+### Fixed
+- Fixed Vite version compatibility: downgraded from Vite 5.4.0 to 4.5.0 for compatibility with laravel-vite-plugin@0.7.2
+- Added fallback to use `--legacy-peer-deps` if npm install fails initially
+- Resolved "ERESOLVE unable to resolve dependency tree" error during npm install
+
 ## [1.1.4] - 2024-12-XX
 
 ### Fixed
