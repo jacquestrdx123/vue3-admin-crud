@@ -119,6 +119,20 @@ class CreateInertiaResourceCommand extends Command
         $stub = str_replace('{{ slug }}', $slug, $stub);
         $stub = str_replace('{{ vuePagePath }}', $vuePagePath, $stub);
 
+        // Add default columns for User resource
+        if ($modelName === 'User') {
+            $columnsSection = "                TextColumn::make('id', 'ID'),\n";
+            $columnsSection .= "                TextColumn::make('name', 'Name'),\n";
+            $columnsSection .= "                TextColumn::make('email', 'EMAIL'),\n";
+            $columnsSection .= "                // Add your columns here";
+            
+            $stub = preg_replace(
+                "/TextColumn::make\('id', 'ID'\),\s*\n\s*\/\/ Add your columns here/",
+                $columnsSection,
+                $stub
+            );
+        }
+
         File::put($filePath, $stub);
         $this->info("✅ Created {$resourceName}.php");
     }
