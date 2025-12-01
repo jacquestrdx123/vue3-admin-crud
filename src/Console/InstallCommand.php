@@ -590,8 +590,8 @@ CSS;
                 }
                 return;
             } else {
-                $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
-                return;
+            $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
+            return;
             }
         }
 
