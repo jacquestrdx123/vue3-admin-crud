@@ -104,7 +104,7 @@ const form = useForm({
 })
 
 const submit = () => {
-  form.post(route('admin.login'), {
+  form.post('/admin/login', {
     onFinish: () => form.reset('password'),
   })
 }

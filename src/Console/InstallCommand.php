@@ -310,7 +310,18 @@ class InstallCommand extends Command
         // Create app.js
         if (File::exists($appJsStub)) {
             if (File::exists($appJsPath)) {
-                $this->warn('app.js already exists. Skipping...');
+                // Check if the existing file has proper Inertia setup
+                $existingContent = File::get($appJsPath);
+                $hasInertiaSetup = str_contains($existingContent, 'createInertiaApp') && 
+                                   str_contains($existingContent, 'resolvePageComponent');
+                
+                if (!$hasInertiaSetup) {
+                    $this->warn('⚠️  app.js is missing Inertia setup. Fixing...');
+                    File::copy($appJsStub, $appJsPath);
+                    $this->info('✅ Fixed app.js with correct Inertia setup.');
+                } else {
+                    $this->comment('app.js already exists with Inertia setup. Skipping...');
+                }
             } else {
                 File::copy($appJsStub, $appJsPath);
                 $this->info('Created app.js');
@@ -360,7 +371,18 @@ CSS;
 
         if (File::exists($adminLoginStub)) {
             if (File::exists($adminLoginPath)) {
-                $this->warn('AdminLogin.vue already exists. Skipping...');
+                // Check if the existing file uses route() helper (requires Ziggy)
+                $existingContent = File::get($adminLoginPath);
+                $usesRouteHelper = str_contains($existingContent, "route('admin.login')") || 
+                                   str_contains($existingContent, 'route("admin.login")');
+                
+                if ($usesRouteHelper) {
+                    $this->warn('⚠️  AdminLogin.vue uses route() helper. Fixing to use direct URL...');
+                    File::copy($adminLoginStub, $adminLoginPath);
+                    $this->info('✅ Fixed AdminLogin.vue with direct URL path.');
+                } else {
+                    $this->comment('AdminLogin.vue already exists. Skipping...');
+                }
             } else {
                 File::copy($adminLoginStub, $adminLoginPath);
                 $this->info('Created AdminLogin.vue');
@@ -376,7 +398,19 @@ CSS;
 
             if (File::exists($customerLoginStub)) {
                 if (File::exists($customerLoginPath)) {
-                    $this->warn('CustomerLogin.vue already exists. Skipping...');
+                    // Check if the existing file uses route() helper (requires Ziggy)
+                    $existingContent = File::get($customerLoginPath);
+                    $usesRouteHelper = str_contains($existingContent, "route('customer.login')") || 
+                                       str_contains($existingContent, 'route("customer.login")') ||
+                                       preg_match("/route\(['\"]customer\.login['\"]\)/", $existingContent);
+                    
+                    if ($usesRouteHelper) {
+                        $this->warn('⚠️  CustomerLogin.vue uses route() helper. Fixing to use direct URL...');
+                        File::copy($customerLoginStub, $customerLoginPath);
+                        $this->info('✅ Fixed CustomerLogin.vue with direct URL path.');
+                    } else {
+                        $this->comment('CustomerLogin.vue already exists. Skipping...');
+                    }
                 } else {
                     File::copy($customerLoginStub, $customerLoginPath);
                     $this->info('Created CustomerLogin.vue');

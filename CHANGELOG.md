@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2024-12-XX
+
+### Fixed
+
+- Fixed `app.js.stub` to use `resolvePageComponent` from `laravel-vite-plugin/inertia-helpers` (recommended approach)
+- Fixed `AdminLogin.vue.stub` to use direct URL `/admin/login` instead of `route('admin.login')` (removes Ziggy dependency)
+- Fixed `CustomerLogin.vue.stub` to use direct URL `/login` instead of `route('customer.login')` (removes Ziggy dependency)
+
+### Added
+
+- InstallCommand now automatically detects and fixes existing `app.js` files missing Inertia setup
+- InstallCommand now automatically detects and fixes existing login pages using `route()` helper
+- Enhanced file detection to prevent white page issues on existing installations
+
+### Changed
+
+- `createJavaScriptEntryPoint()` now checks for proper Inertia setup and fixes missing configurations
+- `createLoginPages()` now checks for `route()` helper usage and automatically fixes to use direct URLs
+
 ## [2.2.0] - 2024-12-XX
 
 ### Added
