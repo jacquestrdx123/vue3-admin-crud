@@ -43,6 +43,8 @@ The installer will automatically:
 - ✅ Run `npm install` to install all dependencies
 - ✅ Publish all package assets (components, config, migrations)
 - ✅ Set up Tailwind CSS configuration
+- ✅ Create admin login page (`resources/js/Pages/Auth/AdminLogin.vue`)
+- ✅ Add admin routes to `routes/web.php` with `/admin` prefix group
 
 > **Note**: If you encounter "Cannot find package 'laravel'" errors, make sure `npm install` completed successfully. The `laravel-vite-plugin` package is required for Vite to work with Laravel.
 
@@ -65,7 +67,7 @@ Update your `vite.config.js` to include Tailwind CSS 4 and Vue support:
 
 ```javascript
 import { defineConfig } from "vite";
-import laravel from "laravel-vite-plugin";
+import laravel, { refreshPaths } from "laravel-vite-plugin";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -73,7 +75,7 @@ export default defineConfig({
   plugins: [
     laravel({
       input: ["resources/css/app.css", "resources/js/app.js"],
-      refresh: true,
+      refresh: refreshPaths,
     }),
     vue({
       template: {
@@ -188,6 +190,59 @@ return [
     ],
     'route_prefix' => 'vue',
 ];
+```
+
+## Admin Authentication
+
+The installer automatically creates admin authentication routes. After running `php artisan vue-admin-panel:install`, you'll have:
+
+- **Login Page**: `resources/js/Pages/Auth/AdminLogin.vue`
+- **Admin Routes**: Automatically added to `routes/web.php`
+
+### Admin Routes
+
+The installer creates the following routes in your `routes/web.php`:
+
+```php
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['guest'])->group(function () {
+        Route::get('/login', function () {
+            return Inertia::render('Auth/AdminLogin');
+        })->name('login');
+
+        Route::post('/login', function (Request $request) {
+            // Authentication logic
+        })->name('login');
+    });
+});
+```
+
+**Available Routes:**
+
+- `GET /admin/login` - Display the admin login page
+- `POST /admin/login` - Handle admin authentication
+
+**Route Names:**
+
+- `admin.login` - Both GET and POST routes use this name
+
+### Customizing Admin Authentication
+
+You can customize the authentication logic by modifying the POST route in `routes/web.php` or by creating a dedicated `AdminAuthController`:
+
+```php
+// routes/web.php
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['guest'])->group(function () {
+        Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [AdminAuthController::class, 'login'])->name('login');
+    });
+
+    // Protected admin routes
+    Route::middleware(['auth'])->group(function () {
+        // Your admin routes here
+    });
+});
 ```
 
 ## Optional: Column Preferences
