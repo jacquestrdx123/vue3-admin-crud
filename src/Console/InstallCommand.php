@@ -514,6 +514,13 @@ CSS;
                     $routesContent
                 );
                 
+                // Fix redirect to use named route
+                $routesContent = preg_replace(
+                    "/redirect\(\)->intended\(['\"]\/admin['\"]\)/",
+                    "redirect()->intended(route('admin.dashboard'))",
+                    $routesContent
+                );
+                
                 // Update comment if it exists
                 $routesContent = preg_replace(
                     "/\/\/ Protected admin routes \(auth:user guard\)/",
@@ -551,7 +558,7 @@ CSS;
         $adminRoutes .= "            \n";
         $adminRoutes .= "            if (\\Illuminate\\Support\\Facades\\Auth::attempt(\$credentials, \$request->boolean('remember'))) {\n";
         $adminRoutes .= "                \$request->session()->regenerate();\n";
-        $adminRoutes .= "                return redirect()->intended('/admin');\n";
+        $adminRoutes .= "                return redirect()->intended(route('admin.dashboard'));\n";
         $adminRoutes .= "            }\n";
         $adminRoutes .= "            \n";
         $adminRoutes .= "            return back()->withErrors([\n";
@@ -618,7 +625,7 @@ CSS;
         $this->line("            ");
         $this->line("            if (\\Illuminate\\Support\\Facades\\Auth::attempt(\$credentials, \$request->boolean('remember'))) {");
         $this->line("                \$request->session()->regenerate();");
-        $this->line("                return redirect()->intended('/admin');");
+        $this->line("                return redirect()->intended(route('admin.dashboard'));");
         $this->line("            }");
         $this->line("            ");
         $this->line("            return back()->withErrors([");
