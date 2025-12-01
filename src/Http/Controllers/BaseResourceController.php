@@ -44,7 +44,7 @@ use InertiaResource\Inertia\InertiaResource;
  *   protected function getQuery(): Builder
  *   {
  *       return parent::getQuery()
- *           ->with(['member', 'cpdCategory', 'assignedUser']);
+ *           ->with(['customer', 'cpdCategory', 'assignedUser']);
  *   }
  *
  * =================================================================================
@@ -64,21 +64,21 @@ use InertiaResource\Inertia\InertiaResource;
  *
  * Example:
  *
- *   class MemberController extends BaseResourceController
+ *   class CustomerController extends BaseResourceController
  *   {
  *       protected function getResourceClass(): string
  *       {
- *           return MemberResource::class;
+ *           return CustomerResource::class;
  *       }
  *
  *       protected function getModel(): string
  *       {
- *           return Member::class;
+ *           return Customer::class;
  *       }
  *
  *       protected function getIndexRoute(): string
  *       {
- *           return 'vue.members.index';
+ *           return 'vue.customers.index';
  *       }
  *
  *       protected function getQuery(): Builder

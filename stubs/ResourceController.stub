@@ -1,0 +1,33 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model }};
+use {{ resourceNamespace }}\{{ resourceName }};
+use InertiaResource\Http\Controllers\BaseResourceController;
+use Illuminate\Database\Eloquent\Builder;
+
+class {{ controllerName }} extends BaseResourceController
+{
+    protected function getResourceClass(): string
+    {
+        return {{ resourceName }}::class;
+    }
+
+    protected function getModel(): string
+    {
+        return {{ model }}::class;
+    }
+
+    protected function getIndexRoute(): string
+    {
+        return '{{ routeName }}.index';
+    }
+
+    // Optionally override getQuery() to eager load relationships
+    // protected function getQuery(): Builder
+    // {
+    //     return parent::getQuery()->with(['relationship']);
+    // }
+}
+

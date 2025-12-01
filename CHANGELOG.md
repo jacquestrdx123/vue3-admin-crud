@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2024-12-XX
+
+### Added
+- `make:inertia-resource` Artisan command to generate InertiaResource components
+- Command supports flags: `--controller`, `--routes`, `--vue`, and `--all`
+- Stub files for InertiaResource, Controller, Routes, and Vue pages (Index, Create, Edit, Show)
+- Automatic generation of proper namespaces, paths, and route definitions
+- Model validation before generation
+- File overwrite protection with confirmation prompts
+
+### Changed
+- Service provider now registers the new `CreateInertiaResourceCommand`
+
+## [1.0.0] - 2024-XX-XX
+
 ### Added
 - Initial release of InertiaResource package
 - Complete CRUD resource system for Inertia.js applications

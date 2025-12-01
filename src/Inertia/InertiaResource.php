@@ -428,9 +428,9 @@ abstract class InertiaResource
             return false;
         }
 
-        // Check if user is a member (if member model is configured)
-        $memberModel = config('inertia-resource.member_model');
-        if ($memberModel && $user instanceof $memberModel) {
+        // Check if user is a customer (if customer model is configured)
+        $customerModel = config('inertia-resource.customer_model');
+        if ($customerModel && $user instanceof $customerModel) {
             return false;
         }
 

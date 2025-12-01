@@ -47,6 +47,11 @@ class InstallCommand extends Command
         ]);
         $this->newLine();
 
+        // Create login pages
+        $this->info('🔐 Creating login pages...');
+        $this->createLoginPages();
+        $this->newLine();
+
         // Install npm dependencies
         if ($this->confirm('Would you like to run npm install now?', true)) {
             $this->info('📥 Running npm install...');
@@ -161,6 +166,53 @@ class InstallCommand extends Command
                 File::copy($packageConfigPath, $tailwindConfigPath);
                 $this->info('Published tailwind.config.js');
             }
+        }
+    }
+
+    /**
+     * Create login pages
+     */
+    protected function createLoginPages(): void
+    {
+        $pagesPath = resource_path('js/Pages');
+        $authPath = $pagesPath.'/Auth';
+
+        // Create Auth directory if it doesn't exist
+        if (!File::exists($authPath)) {
+            File::makeDirectory($authPath, 0755, true);
+        }
+
+        // Admin Login Page
+        $adminLoginStub = __DIR__.'/../../stubs/Pages/Auth/AdminLogin.vue.stub';
+        $adminLoginPath = $authPath.'/AdminLogin.vue';
+
+        if (File::exists($adminLoginStub)) {
+            if (File::exists($adminLoginPath)) {
+                $this->warn('AdminLogin.vue already exists. Skipping...');
+            } else {
+                File::copy($adminLoginStub, $adminLoginPath);
+                $this->info('Created AdminLogin.vue');
+            }
+        }
+
+        // Customer Login Page (only if use_customers is enabled)
+        $useCustomers = config('inertia-resource.use_customers', false);
+        
+        if ($useCustomers) {
+            $customerLoginStub = __DIR__.'/../../stubs/Pages/Auth/CustomerLogin.vue.stub';
+            $customerLoginPath = $authPath.'/CustomerLogin.vue';
+
+            if (File::exists($customerLoginStub)) {
+                if (File::exists($customerLoginPath)) {
+                    $this->warn('CustomerLogin.vue already exists. Skipping...');
+                } else {
+                    File::copy($customerLoginStub, $customerLoginPath);
+                    $this->info('Created CustomerLogin.vue');
+                }
+            }
+        } else {
+            $this->comment('Customer login page skipped (use_customers is disabled).');
+            $this->comment('Enable it in config/inertia-resource.php to create the customer login page.');
         }
     }
 }

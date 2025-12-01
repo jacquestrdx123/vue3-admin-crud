@@ -112,7 +112,7 @@ package/
 ### Dependency Injection
 
 - Replaced `App\Models\User` with `Authenticatable` interface
-- Replaced `App\Models\Member` with config-based check
+- Replaced `App\Models\Customer` with config-based check
 - Made `UserColumnPreference` optional via `ColumnPreferenceRepository` interface
 - Made search logic configurable via `SearchQueryBuilder` interface
 

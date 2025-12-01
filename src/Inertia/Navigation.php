@@ -10,15 +10,15 @@ class Navigation
     public static function get(): array
     {
         $userModel = config('inertia-resource.user_model');
-        $memberModel = config('inertia-resource.member_model');
+        $customerModel = config('inertia-resource.customer_model');
 
         $user = auth()->user();
         if (! $user) {
             return [];
         }
 
-        // Members don't have admin navigation - only User models do
-        if ($memberModel && $user instanceof $memberModel) {
+        // Customers don't have admin navigation - only User models do
+        if ($customerModel && $user instanceof $customerModel) {
             return [];
         }
 

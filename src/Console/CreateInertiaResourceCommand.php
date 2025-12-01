@@ -1,0 +1,276 @@
+<?php
+
+namespace InertiaResource\Console;
+
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
+
+class CreateInertiaResourceCommand extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'make:inertia-resource {model : The model class name (e.g., User, Product)} 
+                            {--controller : Generate the controller}
+                            {--routes : Generate route definitions}
+                            {--vue : Generate Vue page files}
+                            {--all : Generate controller, routes, and Vue files}';
+
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Create a new InertiaResource with optional controller, routes, and Vue files';
+
+    /**
+     * Execute the console command.
+     */
+    public function handle(): int
+    {
+        $model = $this->argument('model');
+        $generateController = $this->option('controller') || $this->option('all');
+        $generateRoutes = $this->option('routes') || $this->option('all');
+        $generateVue = $this->option('vue') || $this->option('all');
+
+        // Validate model exists
+        if (!class_exists($model)) {
+            $this->error("Model class '{$model}' does not exist.");
+            return 1;
+        }
+
+        $modelName = class_basename($model);
+        $resourceName = $modelName.'Resource';
+        $controllerName = $modelName.'Controller';
+        $slug = Str::kebab(Str::plural($modelName));
+
+        $this->info("Creating InertiaResource for {$modelName}...");
+        $this->newLine();
+
+        // Determine namespaces and paths
+        $appNamespace = $this->getAppNamespace();
+        $resourceNamespace = $appNamespace.'Support\\Inertia\\Resources';
+        $controllerNamespace = $appNamespace.'Http\\Controllers';
+
+        // Create directories if they don't exist
+        $resourcePath = app_path('Support/Inertia/Resources');
+        $controllerPath = app_path('Http/Controllers');
+
+        if (!File::exists($resourcePath)) {
+            File::makeDirectory($resourcePath, 0755, true);
+        }
+
+        if ($generateController && !File::exists($controllerPath)) {
+            File::makeDirectory($controllerPath, 0755, true);
+        }
+
+        // Generate InertiaResource
+        $vuePagePath = $generateVue ? "Resources/{$modelName}" : 'Resources';
+        $this->generateResource($model, $modelName, $resourceName, $resourceNamespace, $resourcePath, $slug, $vuePagePath);
+
+        // Generate Controller
+        if ($generateController) {
+            $this->generateController($model, $modelName, $controllerName, $controllerNamespace, $controllerPath, $resourceNamespace, $resourceName, $slug);
+        }
+
+        // Generate Routes
+        if ($generateRoutes) {
+            $this->generateRoutes($modelName, $controllerName, $controllerNamespace, $slug);
+        }
+
+        // Generate Vue Files
+        if ($generateVue) {
+            $this->generateVueFiles($modelName, $slug);
+        }
+
+        $this->newLine();
+        $this->info('✅ InertiaResource created successfully!');
+        $this->newLine();
+
+        if ($generateRoutes) {
+            $this->comment('⚠️  Don\'t forget to add the routes to your routes file (web.php or api.php)');
+        }
+
+        return 0;
+    }
+
+    /**
+     * Generate the InertiaResource class
+     */
+    protected function generateResource(string $model, string $modelName, string $resourceName, string $namespace, string $path, string $slug, string $vuePagePath = 'Resources'): void
+    {
+        $filePath = "{$path}/{$resourceName}.php";
+
+        if (File::exists($filePath)) {
+            if (!$this->confirm("Resource file {$resourceName}.php already exists. Overwrite?", false)) {
+                $this->warn("Skipped {$resourceName}.php");
+                return;
+            }
+        }
+
+        $stub = File::get(__DIR__.'/../../stubs/InertiaResource.stub');
+        $stub = str_replace('{{ namespace }}', $namespace, $stub);
+        $stub = str_replace('{{ resourceName }}', $resourceName, $stub);
+        $stub = str_replace('{{ model }}', $model, $stub);
+        $stub = str_replace('{{ modelName }}', $modelName, $stub);
+        $stub = str_replace('{{ slug }}', $slug, $stub);
+        $stub = str_replace('{{ vuePagePath }}', $vuePagePath, $stub);
+
+        File::put($filePath, $stub);
+        $this->info("✅ Created {$resourceName}.php");
+    }
+
+    /**
+     * Generate the Controller class
+     */
+    protected function generateController(string $model, string $modelName, string $controllerName, string $namespace, string $path, string $resourceNamespace, string $resourceName, string $slug): void
+    {
+        $filePath = "{$path}/{$controllerName}.php";
+
+        if (File::exists($filePath)) {
+            if (!$this->confirm("Controller file {$controllerName}.php already exists. Overwrite?", false)) {
+                $this->warn("Skipped {$controllerName}.php");
+                return;
+            }
+        }
+
+        $stub = File::get(__DIR__.'/../../stubs/ResourceController.stub');
+        $stub = str_replace('{{ namespace }}', $namespace, $stub);
+        $stub = str_replace('{{ controllerName }}', $controllerName, $stub);
+        $stub = str_replace('{{ resourceNamespace }}', $resourceNamespace, $stub);
+        $stub = str_replace('{{ resourceName }}', $resourceName, $stub);
+        $stub = str_replace('{{ model }}', $model, $stub);
+        $stub = str_replace('{{ modelName }}', $modelName, $stub);
+        $stub = str_replace('{{ routePrefix }}', $slug, $stub);
+        $stub = str_replace('{{ routeName }}', "vue.{$slug}", $stub);
+
+        File::put($filePath, $stub);
+        $this->info("✅ Created {$controllerName}.php");
+    }
+
+    /**
+     * Generate route definitions
+     */
+    protected function generateRoutes(string $modelName, string $controllerName, string $controllerNamespace, string $slug): void
+    {
+        $routesPath = base_path('routes');
+        $routesFile = "{$routesPath}/web.php";
+
+        // Check if routes file exists, otherwise try api.php
+        if (!File::exists($routesFile)) {
+            $routesFile = "{$routesPath}/api.php";
+        }
+
+        if (!File::exists($routesFile)) {
+            $this->warn("⚠️  Could not find routes file. Please add routes manually:");
+            $this->displayRoutes($modelName, $controllerName, $controllerNamespace, $slug);
+            return;
+        }
+
+        $stub = File::get(__DIR__.'/../../stubs/routes.stub');
+        $stub = str_replace('{{ routePrefix }}', $slug, $stub);
+        $stub = str_replace('{{ controllerNamespace }}', $controllerNamespace, $stub);
+        $stub = str_replace('{{ controllerName }}', $controllerName, $stub);
+        $stub = str_replace('{{ routeName }}', "vue.{$slug}", $stub);
+
+        $routesContent = File::get($routesFile);
+        
+        // Check if routes already exist
+        if (strpos($routesContent, "Route::prefix('{$slug}')") !== false) {
+            $this->warn("⚠️  Routes for '{$slug}' already exist in routes file. Skipping route generation.");
+            $this->displayRoutes($modelName, $controllerName, $controllerNamespace, $slug);
+            return;
+        }
+
+        // Append routes to file
+        $routesContent .= "\n\n".$stub;
+        File::put($routesFile, $routesContent);
+        $this->info("✅ Added routes to routes file");
+    }
+
+    /**
+     * Display route definitions for manual addition
+     */
+    protected function displayRoutes(string $modelName, string $controllerName, string $controllerNamespace, string $slug): void
+    {
+        $this->newLine();
+        $this->comment("Add these routes to your routes file (wrap in Route::prefix('vue') if needed):");
+        $this->newLine();
+        $this->line("Route::prefix('{$slug}')->name('{$slug}.')->middleware(['web'])->group(function () {");
+        $this->line("    Route::get('/', [{$controllerNamespace}\\{$controllerName}::class, 'index'])->name('index');");
+        $this->line("    Route::get('/create', [{$controllerNamespace}\\{$controllerName}::class, 'create'])->name('create');");
+        $this->line("    Route::post('/', [{$controllerNamespace}\\{$controllerName}::class, 'store'])->name('store');");
+        $this->line("    Route::get('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'show'])->name('show');");
+        $this->line("    Route::get('/{id}/edit', [{$controllerNamespace}\\{$controllerName}::class, 'edit'])->name('edit');");
+        $this->line("    Route::put('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'update'])->name('update');");
+        $this->line("    Route::delete('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'destroy'])->name('destroy');");
+        $this->line("    Route::post('/bulk-action', [{$controllerNamespace}\\{$controllerName}::class, 'bulkAction'])->name('bulk-action');");
+        $this->line("});");
+        $this->newLine();
+        $this->comment("Note: If your controller uses 'vue.{$slug}.index', wrap the above in:");
+        $this->comment("Route::prefix('vue')->name('vue.')->group(function () { ... });");
+        $this->newLine();
+    }
+
+    /**
+     * Generate Vue page files
+     */
+    protected function generateVueFiles(string $modelName, string $slug): void
+    {
+        $vuePath = resource_path('js/Pages/Resources/'.$modelName);
+
+        if (!File::exists($vuePath)) {
+            File::makeDirectory($vuePath, 0755, true);
+        }
+
+        $pages = ['Index', 'Create', 'Edit', 'Show'];
+
+        foreach ($pages as $page) {
+            $fileName = "{$page}.vue";
+            $filePath = "{$vuePath}/{$fileName}";
+
+            if (File::exists($filePath)) {
+                if (!$this->confirm("Vue file {$fileName} already exists. Overwrite?", false)) {
+                    $this->warn("Skipped {$fileName}");
+                    continue;
+                }
+            }
+
+            $stubPath = __DIR__."/../../stubs/Pages/Resources/{$page}.vue.stub";
+            
+            if (!File::exists($stubPath)) {
+                $this->warn("⚠️  Stub file not found: {$stubPath}");
+                continue;
+            }
+
+            $stub = File::get($stubPath);
+            $stub = str_replace('{{ resourceSlug }}', $slug, $stub);
+            $stub = str_replace('{{ title }}', Str::title(Str::singular($slug)), $stub);
+
+            File::put($filePath, $stub);
+            $this->info("✅ Created {$fileName}");
+        }
+    }
+
+    /**
+     * Get the application namespace
+     */
+    protected function getAppNamespace(): string
+    {
+        $composer = json_decode(File::get(base_path('composer.json')), true);
+        
+        foreach ((array) data_get($composer, 'autoload.psr-4') as $namespace => $path) {
+            foreach ((array) $path as $pathChoice) {
+                if (realpath(app_path()) === realpath(base_path($pathChoice))) {
+                    return $namespace;
+                }
+            }
+        }
+
+        return 'App\\';
+    }
+}
+

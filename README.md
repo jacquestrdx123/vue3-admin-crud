@@ -129,7 +129,7 @@ Configure your models and paths in `config/inertia-resource.php`:
 ```php
 return [
     'user_model' => \App\Models\User::class,
-    'member_model' => null, // Optional
+    'customer_model' => null, // Optional
     'column_preference_model' => \InertiaResource\Models\UserColumnPreference::class, // Optional
     'resource_paths' => [
         app_path('Support/Inertia/Resources'),

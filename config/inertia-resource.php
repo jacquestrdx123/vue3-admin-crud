@@ -13,14 +13,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Member Model (Optional)
+    | Use Customers
     |--------------------------------------------------------------------------
     |
-    | If your application has a separate Member model (e.g., for a member portal),
-    | specify it here. Members will be excluded from admin navigation.
+    | Enable customer functionality. When enabled, a customer login page will be
+    | available and customers can access the customer portal.
     |
     */
-    'member_model' => null,
+    'use_customers' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Customer Model (Optional)
+    |--------------------------------------------------------------------------
+    |
+    | If your application has a separate Customer model (e.g., for a customer portal),
+    | specify it here. Customers will be excluded from admin navigation.
+    | Only used when 'use_customers' is set to true.
+    |
+    */
+    'customer_model' => null,
 
     /*
     |--------------------------------------------------------------------------
@@ -89,7 +101,7 @@ return [
     | Route Prefix
     |--------------------------------------------------------------------------
     |
-    | The prefix used for Inertia resource routes (e.g., 'vue' for 'vue.members.index').
+    | The prefix used for Inertia resource routes (e.g., 'vue' for 'vue.customers.index').
     |
     */
     'route_prefix' => 'vue',

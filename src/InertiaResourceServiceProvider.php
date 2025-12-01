@@ -37,6 +37,7 @@ class InertiaResourceServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \InertiaResource\Console\InstallCommand::class,
+                \InertiaResource\Console\CreateInertiaResourceCommand::class,
             ]);
         }
 
@@ -64,6 +65,12 @@ class InertiaResourceServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/css/app.css' => resource_path('css/vue-admin-panel.css'),
         ], 'inertia-resource-assets');
+
+        // Publish login page stubs
+        $this->publishes([
+            __DIR__.'/../stubs/Pages/Auth/AdminLogin.vue.stub' => resource_path('js/Pages/Auth/AdminLogin.vue'),
+            __DIR__.'/../stubs/Pages/Auth/CustomerLogin.vue.stub' => resource_path('js/Pages/Auth/CustomerLogin.vue'),
+        ], 'inertia-resource-login-pages');
 
         // Publish all assets (config, migrations, components) together
         $this->publishes([
