@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2024-12-XX
+
+### Added
+- Documentation for republishing assets after package updates
+- `vue-admin-panel:publish` command for easy asset republishing
+
 ## [1.1.0] - 2024-12-XX
 
 ### Added
