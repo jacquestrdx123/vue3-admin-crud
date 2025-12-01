@@ -72,6 +72,14 @@ class InstallCommand extends Command
         $this->createAdminRoutes();
         $this->newLine();
 
+        // Create customer routes (if enabled)
+        $useCustomers = config('inertia-resource.use_customers', false);
+        if ($useCustomers) {
+            $this->info('🛣️  Creating customer routes...');
+            $this->createCustomerRoutes();
+            $this->newLine();
+        }
+
         // Create admin layouts and dashboard
         $this->info('📐 Creating admin layouts and dashboard...');
         $this->createAdminLayouts();
@@ -109,6 +117,34 @@ class InstallCommand extends Command
         $this->info('🔧 Checking vite.config.js...');
         $this->fixViteConfig();
         $this->newLine();
+        
+        // Ask if user wants to create the initial User Resource
+        if ($this->confirm('Do you want to create the initial User Resource?', false)) {
+            $this->info('📦 Creating User Resource...');
+            $this->newLine();
+            
+            // Check if User model exists
+            $userModel = 'App\\Models\\User';
+            if (!class_exists($userModel)) {
+                // Try alternative namespace
+                $userModel = 'App\\User';
+                if (!class_exists($userModel)) {
+                    $this->warn('⚠️  User model not found. Skipping User Resource creation.');
+                    $this->comment('   Please create the User Resource manually: php artisan make:inertia-resource "App\\Models\\User" --all');
+                } else {
+                    $this->call('make:inertia-resource', [
+                        'model' => $userModel,
+                        '--all' => true,
+                    ]);
+                }
+            } else {
+                $this->call('make:inertia-resource', [
+                    'model' => $userModel,
+                    '--all' => true,
+                ]);
+            }
+            $this->newLine();
+        }
         
         $this->newLine();
         $this->info('✅ Vue Admin Panel installation complete!');
@@ -477,7 +513,7 @@ CSS;
         $adminRoutes .= "                'password' => ['required'],\n";
         $adminRoutes .= "            ]);\n";
         $adminRoutes .= "            \n";
-        $adminRoutes .= "            if (\\Illuminate\\Support\\Facades\\Auth::attempt(\$credentials, \$request->boolean('remember'))) {\n";
+        $adminRoutes .= "            if (\\Illuminate\\Support\\Facades\\Auth::guard('user')->attempt(\$credentials, \$request->boolean('remember'))) {\n";
         $adminRoutes .= "                \$request->session()->regenerate();\n";
         $adminRoutes .= "                return redirect()->intended('/admin');\n";
         $adminRoutes .= "            }\n";
@@ -488,8 +524,8 @@ CSS;
         $adminRoutes .= "        })->name('login');\n";
         $adminRoutes .= "    });\n";
         $adminRoutes .= "    \n";
-        $adminRoutes .= "    // Protected admin routes (auth middleware)\n";
-        $adminRoutes .= "    Route::middleware(['auth'])->group(function () {\n";
+        $adminRoutes .= "    // Protected admin routes (auth:user guard)\n";
+        $adminRoutes .= "    Route::middleware(['auth:user'])->group(function () {\n";
         $adminRoutes .= "        Route::get('/', function () {\n";
         $adminRoutes .= "            return \\Inertia\\Inertia::render('Dashboard');\n";
         $adminRoutes .= "        })->name('dashboard');\n";
@@ -544,7 +580,7 @@ CSS;
         $this->line("                'password' => ['required'],");
         $this->line("            ]);");
         $this->line("            ");
-        $this->line("            if (\\Illuminate\\Support\\Facades\\Auth::attempt(\$credentials, \$request->boolean('remember'))) {");
+        $this->line("            if (\\Illuminate\\Support\\Facades\\Auth::guard('user')->attempt(\$credentials, \$request->boolean('remember'))) {");
         $this->line("                \$request->session()->regenerate();");
         $this->line("                return redirect()->intended('/admin');");
         $this->line("            }");
@@ -555,8 +591,147 @@ CSS;
         $this->line("        })->name('login');");
         $this->line("    });");
         $this->line("    ");
-        $this->line("    // Protected admin routes (auth middleware)");
-        $this->line("    Route::middleware(['auth'])->group(function () {");
+        $this->line("    // Protected admin routes (auth:user guard)");
+        $this->line("    Route::middleware(['auth:user'])->group(function () {");
+        $this->line("        Route::get('/', function () {");
+        $this->line("            return Inertia::render('Dashboard');");
+        $this->line("        })->name('dashboard');");
+        $this->line("    });");
+        $this->line("});");
+        $this->newLine();
+    }
+
+    /**
+     * Create customer routes
+     */
+    protected function createCustomerRoutes(): void
+    {
+        $useCustomers = config('inertia-resource.use_customers', false);
+        
+        if (!$useCustomers) {
+            return;
+        }
+
+        $routesPath = base_path('routes');
+        $routesFile = "{$routesPath}/web.php";
+
+        // Check if routes file exists
+        if (!File::exists($routesFile)) {
+            $this->warn('⚠️  Could not find routes/web.php file.');
+            $this->comment('Please add the following routes manually:');
+            $this->displayCustomerRoutes();
+            return;
+        }
+
+        $routesContent = File::get($routesFile);
+        
+        // Check if customer routes already exist
+        if (strpos($routesContent, "Route::prefix('customer')") !== false || 
+            strpos($routesContent, "Route::get('/customer/login'") !== false ||
+            strpos($routesContent, "->name('customer.login')") !== false) {
+            $this->warn('⚠️  Customer routes already exist in routes file. Skipping route generation.');
+            return;
+        }
+
+        // Check if Inertia is imported
+        $hasInertiaImport = strpos($routesContent, "use Inertia\\Inertia;") !== false || 
+                            strpos($routesContent, "use Inertia\\Inertia as Inertia;") !== false;
+
+        // Prepare customer routes
+        $customerRoutes = "\n\n// Customer routes\n";
+        $customerRoutes .= "Route::prefix('customer')->name('customer.')->group(function () {\n";
+        $customerRoutes .= "    // Login routes (guest middleware)\n";
+        $customerRoutes .= "    Route::middleware(['guest'])->group(function () {\n";
+        $customerRoutes .= "        Route::get('/login', function () {\n";
+        $customerRoutes .= "            return \\Inertia\\Inertia::render('Auth/CustomerLogin');\n";
+        $customerRoutes .= "        })->name('login');\n";
+        $customerRoutes .= "        \n";
+        $customerRoutes .= "        Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {\n";
+        $customerRoutes .= "            \$credentials = \$request->validate([\n";
+        $customerRoutes .= "                'email' => ['required', 'email'],\n";
+        $customerRoutes .= "                'password' => ['required'],\n";
+        $customerRoutes .= "            ]);\n";
+        $customerRoutes .= "            \n";
+        $customerRoutes .= "            if (\\Illuminate\\Support\\Facades\\Auth::guard('customer')->attempt(\$credentials, \$request->boolean('remember'))) {\n";
+        $customerRoutes .= "                \$request->session()->regenerate();\n";
+        $customerRoutes .= "                return redirect()->intended('/customer');\n";
+        $customerRoutes .= "            }\n";
+        $customerRoutes .= "            \n";
+        $customerRoutes .= "            return back()->withErrors([\n";
+        $customerRoutes .= "                'email' => 'The provided credentials do not match our records.',\n";
+        $customerRoutes .= "            ])->onlyInput('email');\n";
+        $customerRoutes .= "        })->name('login');\n";
+        $customerRoutes .= "    });\n";
+        $customerRoutes .= "    \n";
+        $customerRoutes .= "    // Protected customer routes (auth:customer guard)\n";
+        $customerRoutes .= "    Route::middleware(['auth:customer'])->group(function () {\n";
+        $customerRoutes .= "        Route::get('/', function () {\n";
+        $customerRoutes .= "            return \\Inertia\\Inertia::render('Dashboard');\n";
+        $customerRoutes .= "        })->name('dashboard');\n";
+        $customerRoutes .= "    });\n";
+        $customerRoutes .= "});\n";
+
+        // Add Inertia import if not present
+        if (!$hasInertiaImport) {
+            // Find the last use statement or add after <?php
+            if (preg_match('/^<\?php\s*\n/', $routesContent)) {
+                $routesContent = preg_replace(
+                    '/^(<\?php\s*\n)/',
+                    "$1use Inertia\\Inertia;\n",
+                    $routesContent
+                );
+            } else {
+                // Add after first line
+                $routesContent = preg_replace(
+                    '/^(<\?php[^\n]*\n)/',
+                    "$1use Inertia\\Inertia;\n",
+                    $routesContent
+                );
+            }
+        }
+
+        // Append customer routes to file
+        $routesContent .= $customerRoutes;
+        File::put($routesFile, $routesContent);
+        $this->info('✅ Added customer routes to routes/web.php');
+    }
+
+    /**
+     * Display customer route definitions for manual addition
+     */
+    protected function displayCustomerRoutes(): void
+    {
+        $this->newLine();
+        $this->comment('Add these routes to your routes/web.php file:');
+        $this->newLine();
+        $this->line("use Inertia\\Inertia;");
+        $this->newLine();
+        $this->line("Route::prefix('customer')->name('customer.')->group(function () {");
+        $this->line("    // Login routes (guest middleware)");
+        $this->line("    Route::middleware(['guest'])->group(function () {");
+        $this->line("        Route::get('/login', function () {");
+        $this->line("            return Inertia::render('Auth/CustomerLogin');");
+        $this->line("        })->name('login');");
+        $this->line("        ");
+        $this->line("        Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {");
+        $this->line("            \$credentials = \$request->validate([");
+        $this->line("                'email' => ['required', 'email'],");
+        $this->line("                'password' => ['required'],");
+        $this->line("            ]);");
+        $this->line("            ");
+        $this->line("            if (\\Illuminate\\Support\\Facades\\Auth::guard('customer')->attempt(\$credentials, \$request->boolean('remember'))) {");
+        $this->line("                \$request->session()->regenerate();");
+        $this->line("                return redirect()->intended('/customer');");
+        $this->line("            }");
+        $this->line("            ");
+        $this->line("            return back()->withErrors([");
+        $this->line("                'email' => 'The provided credentials do not match our records.',");
+        $this->line("            ])->onlyInput('email');");
+        $this->line("        })->name('login');");
+        $this->line("    });");
+        $this->line("    ");
+        $this->line("    // Protected customer routes (auth:customer guard)");
+        $this->line("    Route::middleware(['auth:customer'])->group(function () {");
         $this->line("        Route::get('/', function () {");
         $this->line("            return Inertia::render('Dashboard');");
         $this->line("        })->name('dashboard');");
