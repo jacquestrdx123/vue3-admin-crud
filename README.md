@@ -302,7 +302,7 @@ A sample dashboard page is created with:
 </template>
 
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue'
+import AdminLayout from "@/Layouts/AdminLayout.vue";
 </script>
 ```
 
@@ -310,8 +310,8 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 
 ```vue
 <template>
-  <DashboardLayout 
-    title="Dashboard" 
+  <DashboardLayout
+    title="Dashboard"
     description="Welcome to your admin dashboard"
   >
     <!-- Stats Section -->
@@ -335,8 +335,8 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 </template>
 
 <script setup>
-import DashboardLayout from '@/Layouts/DashboardLayout.vue'
-import StatCard from '@/Components/Dashboard/StatCard.vue'
+import DashboardLayout from "@/Layouts/DashboardLayout.vue";
+import StatCard from "@/Components/Dashboard/StatCard.vue";
 </script>
 ```
 
@@ -355,6 +355,7 @@ The `StatCard` component is included for displaying metrics:
 **Location**: `resources/js/Components/Dashboard/StatCard.vue`
 
 **Props**:
+
 - `label` (required): The stat label
 - `value` (required): The stat value (number or string)
 - `icon`: SVG path string for icon
@@ -365,6 +366,7 @@ The `StatCard` component is included for displaying metrics:
 - `currency`: Currency symbol (default: '$')
 
 **Example**:
+
 ```vue
 <StatCard
   label="Revenue"

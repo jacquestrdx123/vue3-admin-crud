@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.4] - 2024-12-XX
+
+### Added
+
+- Added `/admin` route that renders the Dashboard page
+- Dashboard route is protected by `auth` middleware
+- Route name: `admin.dashboard`
+
+### Changed
+
+- Updated `createAdminRoutes()` to include protected dashboard route
+- Login redirect now properly routes to `/admin` dashboard
+
 ## [2.4.3] - 2024-12-XX
 
 ### Added

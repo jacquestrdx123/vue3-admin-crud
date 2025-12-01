@@ -482,6 +482,13 @@ CSS;
         $adminRoutes .= "            ])->onlyInput('email');\n";
         $adminRoutes .= "        })->name('login');\n";
         $adminRoutes .= "    });\n";
+        $adminRoutes .= "    \n";
+        $adminRoutes .= "    // Protected admin routes (auth middleware)\n";
+        $adminRoutes .= "    Route::middleware(['auth'])->group(function () {\n";
+        $adminRoutes .= "        Route::get('/', function () {\n";
+        $adminRoutes .= "            return \\Inertia\\Inertia::render('Dashboard');\n";
+        $adminRoutes .= "        })->name('dashboard');\n";
+        $adminRoutes .= "    });\n";
         $adminRoutes .= "});\n";
 
         // Add Inertia import if not present
@@ -541,6 +548,13 @@ CSS;
         $this->line("                'email' => 'The provided credentials do not match our records.',");
         $this->line("            ])->onlyInput('email');");
         $this->line("        })->name('login');");
+        $this->line("    });");
+        $this->line("    ");
+        $this->line("    // Protected admin routes (auth middleware)");
+        $this->line("    Route::middleware(['auth'])->group(function () {");
+        $this->line("        Route::get('/', function () {");
+        $this->line("            return Inertia::render('Dashboard');");
+        $this->line("        })->name('dashboard');");
         $this->line("    });");
         $this->line("});");
         $this->newLine();
