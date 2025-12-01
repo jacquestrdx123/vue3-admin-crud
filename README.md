@@ -32,6 +32,8 @@ This will automatically:
 
 After the Composer installation, run:
 
+##Before Running the Installer make sure you have enabled Customers inside the config/inertia-resource.php file.
+
 ```bash
 # Run the installer (publishes assets, updates package.json, and runs npm install)
 php artisan vue-admin-panel:install

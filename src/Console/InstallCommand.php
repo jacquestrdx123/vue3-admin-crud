@@ -421,6 +421,55 @@ class InstallCommand extends Command
             $needsFix = true;
         }
         
+        // Check for missing refreshPaths import when laravel-vite-plugin is imported
+        // Pattern: import laravel from 'laravel-vite-plugin' (without { refreshPaths })
+        if (preg_match("/import\s+laravel\s+from\s+['\"]laravel-vite-plugin['\"]/", $fixedContent) &&
+            !preg_match("/import\s+laravel\s*,\s*\{[^}]*refreshPaths[^}]*\}\s+from\s+['\"]laravel-vite-plugin['\"]/", $fixedContent)) {
+            
+            if (!$needsFix) {
+                $this->warn('⚠️  Found laravel-vite-plugin import missing refreshPaths');
+                $this->comment('   Adding refreshPaths to import...');
+            }
+            
+            // Add refreshPaths to the import
+            $fixedContent = preg_replace(
+                "/import\s+laravel\s+from\s+['\"]laravel-vite-plugin['\"]/",
+                "import laravel, { refreshPaths } from 'laravel-vite-plugin'",
+                $fixedContent
+            );
+            
+            $needsFix = true;
+        }
+        
+        // Check if refresh: refreshPaths is used but refreshPaths isn't imported
+        if (str_contains($fixedContent, 'refresh: refreshPaths') &&
+            !preg_match("/import\s+laravel\s*,\s*\{[^}]*refreshPaths[^}]*\}\s+from\s+['\"]laravel-vite-plugin['\"]/", $fixedContent)) {
+            
+            if (!$needsFix) {
+                $this->warn('⚠️  Found refresh: refreshPaths usage without import');
+                $this->comment('   Adding refreshPaths to import...');
+            }
+            
+            // Add refreshPaths to existing laravel import
+            if (preg_match("/import\s+laravel\s+from\s+['\"]laravel-vite-plugin['\"]/", $fixedContent)) {
+                $fixedContent = preg_replace(
+                    "/import\s+laravel\s+from\s+['\"]laravel-vite-plugin['\"]/",
+                    "import laravel, { refreshPaths } from 'laravel-vite-plugin'",
+                    $fixedContent
+                );
+            } else {
+                // If laravel import doesn't exist, add it before other imports
+                $fixedContent = preg_replace(
+                    "/(import\s+[^;]+;)/",
+                    "import laravel, { refreshPaths } from 'laravel-vite-plugin';\n$1",
+                    $fixedContent,
+                    1
+                );
+            }
+            
+            $needsFix = true;
+        }
+        
         // Check if refresh is set to true instead of refreshPaths
         if (str_contains($fixedContent, "refresh: true") && 
             str_contains($fixedContent, "from 'laravel-vite-plugin'")) {
@@ -435,15 +484,119 @@ class InstallCommand extends Command
                 $fixedContent
             );
             
+            // Ensure refreshPaths is imported
+            if (!preg_match("/import\s+laravel\s*,\s*\{[^}]*refreshPaths[^}]*\}\s+from\s+['\"]laravel-vite-plugin['\"]/", $fixedContent)) {
+                $fixedContent = preg_replace(
+                    "/import\s+laravel\s+from\s+['\"]laravel-vite-plugin['\"]/",
+                    "import laravel, { refreshPaths } from 'laravel-vite-plugin'",
+                    $fixedContent
+                );
+            }
+            
+            $needsFix = true;
+        }
+        
+        // Check for missing Vue plugin
+        $hasVueImport = str_contains($fixedContent, "@vitejs/plugin-vue") || str_contains($fixedContent, '@vitejs/plugin-vue');
+        $hasVuePlugin = str_contains($fixedContent, 'vue(') || str_contains($fixedContent, 'vue({');
+        
+        if (!$hasVueImport || !$hasVuePlugin) {
+            if (!$needsFix) {
+                $this->warn('⚠️  Missing Vue plugin in vite.config.js');
+                $this->comment('   Adding Vue plugin...');
+            }
+            
+            // Add Vue import if missing
+            if (!$hasVueImport) {
+                // Find the last import statement and add Vue import after it
+                if (preg_match("/(import\s+[^;]+;)\s*$/m", $fixedContent, $matches)) {
+                    $fixedContent = preg_replace(
+                        "/(import\s+[^;]+;)\s*$/m",
+                        "$1\nimport vue from '@vitejs/plugin-vue';",
+                        $fixedContent,
+                        1
+                    );
+                } else {
+                    // Add after defineConfig import
+                    $fixedContent = preg_replace(
+                        "/(import\s+\{[^}]+\}\s+from\s+['\"]vite['\"];)/",
+                        "$1\nimport vue from '@vitejs/plugin-vue';",
+                        $fixedContent
+                    );
+                }
+            }
+            
+            // Add Vue plugin to plugins array if missing
+            if (!$hasVuePlugin) {
+                // Find the laravel plugin and add vue after it
+                if (preg_match("/(laravel\(\{[^}]*\}\)),?\s*/", $fixedContent, $matches)) {
+                    $vuePlugin = "\n        vue({\n            template: {\n                transformAssetUrls: {\n                    base: null,\n                    includeAbsolute: false,\n                },\n            },\n        }),";
+                    $fixedContent = preg_replace(
+                        "/(laravel\(\{[^}]*\}\)),?\s*/",
+                        "$1," . $vuePlugin,
+                        $fixedContent
+                    );
+                } else {
+                    // Add vue plugin before tailwindcss if it exists
+                    if (str_contains($fixedContent, 'tailwindcss()')) {
+                        $fixedContent = preg_replace(
+                            "/(tailwindcss\(\))/",
+                            "vue({\n            template: {\n                transformAssetUrls: {\n                    base: null,\n                    includeAbsolute: false,\n                },\n            },\n        }),\n        $1",
+                            $fixedContent
+                        );
+                    } else {
+                        // Add at the end of plugins array
+                        $fixedContent = preg_replace(
+                            "/(plugins:\s*\[)([^\]]*)(\])/s",
+                            "$1$2        vue({\n            template: {\n                transformAssetUrls: {\n                    base: null,\n                    includeAbsolute: false,\n                },\n            },\n        }),\n$3",
+                            $fixedContent
+                        );
+                    }
+                }
+            }
+            
+            $needsFix = true;
+        }
+        
+        // Check for missing resolve alias
+        if (!str_contains($fixedContent, "resolve:") || !str_contains($fixedContent, "'@':") || !str_contains($fixedContent, "'@': '/resources/js'")) {
+            if (!$needsFix) {
+                $this->warn('⚠️  Missing resolve alias in vite.config.js');
+                $this->comment('   Adding resolve alias...');
+            }
+            
+            // Check if resolve already exists
+            if (str_contains($fixedContent, 'resolve:')) {
+                // Add alias to existing resolve
+                if (!str_contains($fixedContent, "'@':") && !str_contains($fixedContent, '"@":')) {
+                    $fixedContent = preg_replace(
+                        "/(resolve:\s*\{)/",
+                        "$1\n        alias: {\n            '@': '/resources/js',\n        },",
+                        $fixedContent
+                    );
+                }
+            } else {
+                // Add resolve section before closing brace of defineConfig
+                if (preg_match("/(plugins:\s*\[[^\]]+\]),?\s*(\})/s", $fixedContent, $matches)) {
+                    $fixedContent = preg_replace(
+                        "/(plugins:\s*\[[^\]]+\]),?\s*(\})/s",
+                        "$1,\n    resolve: {\n        alias: {\n            '@': '/resources/js',\n        },\n    }$2",
+                        $fixedContent
+                    );
+                }
+            }
+            
             $needsFix = true;
         }
         
         if ($needsFix && $fixedContent !== $viteConfigContent) {
             File::put($viteConfigPath, $fixedContent);
             $this->info('✅ Fixed vite.config.js import and configuration.');
-        } elseif (str_contains($viteConfigContent, "from 'laravel-vite-plugin'") || 
-                   str_contains($viteConfigContent, 'from "laravel-vite-plugin"')) {
-            $this->comment('✓ vite.config.js already has correct import.');
+        } elseif (str_contains($viteConfigContent, "from 'laravel-vite-plugin'") && 
+                   preg_match("/import\s+laravel\s*,\s*\{[^}]*refreshPaths[^}]*\}\s+from\s+['\"]laravel-vite-plugin['\"]/", $viteConfigContent) &&
+                   str_contains($viteConfigContent, '@vitejs/plugin-vue') &&
+                   str_contains($viteConfigContent, "resolve:")) {
+            $this->comment('✓ vite.config.js already has correct configuration.');
         }
     }
 }

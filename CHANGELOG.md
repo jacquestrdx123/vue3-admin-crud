@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2024-12-XX
+
+### Fixed
+- Fixed vite.config.js detection to properly handle Laravel 12's default configuration
+- Added detection for missing `{ refreshPaths }` import when `laravel-vite-plugin` is imported
+- Added automatic detection and addition of Vue plugin if missing from vite.config.js
+- Added automatic detection and addition of resolve alias (`'@': '/resources/js'`) if missing
+- Improved detection for `refresh: refreshPaths` usage without proper import
+- Fixed issue where existing vite.config.js files weren't being properly updated with required configurations
+
+### Changed
+- Enhanced `fixViteConfig()` method to handle more edge cases and missing configurations
+- Improved error messages and warnings for vite.config.js fixes
+
 ## [2.0.1] - 2024-12-XX
 
 ### Added
