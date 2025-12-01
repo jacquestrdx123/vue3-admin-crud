@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2024-12-XX
+
+### Added
+
+- InstallCommand now prompts user during installation whether they want to use Customers
+- Automatic configuration of `use_customers` setting in `config/inertia-resource.php` based on user's choice
+- `updateCustomersConfig()` method to handle customer configuration updates during installation
+
+### Changed
+
+- Customer login page creation now respects the `use_customers` configuration setting set during installation
+
 ## [2.1.1] - 2024-12-XX
 
 ### Fixed

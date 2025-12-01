@@ -29,6 +29,11 @@ class InstallCommand extends Command
         $this->info('🚀 Installing Vue Admin Panel...');
         $this->newLine();
 
+        // Ask if user wants to use Customers
+        $useCustomers = $this->confirm('Do you want to use Customers?', false);
+        $this->updateCustomersConfig($useCustomers);
+        $this->newLine();
+
         // Merge package.json dependencies
         $this->info('📦 Merging npm dependencies...');
         $this->mergePackageJson();
@@ -106,6 +111,51 @@ class InstallCommand extends Command
         $this->comment('3. Start your development server: npm run dev');
         
         return 0;
+    }
+
+    /**
+     * Update customers configuration
+     */
+    protected function updateCustomersConfig(bool $useCustomers): void
+    {
+        $configPath = config_path('inertia-resource.php');
+        $packageConfigPath = __DIR__.'/../../config/inertia-resource.php';
+
+        // If config file doesn't exist, copy it from the package
+        if (!File::exists($configPath)) {
+            if (File::exists($packageConfigPath)) {
+                // Ensure config directory exists
+                $configDir = config_path();
+                if (!File::exists($configDir)) {
+                    File::makeDirectory($configDir, 0755, true);
+                }
+                File::copy($packageConfigPath, $configPath);
+            } else {
+                $this->warn('⚠️  Could not find package config file. Please publish config manually.');
+                return;
+            }
+        }
+
+        if (File::exists($configPath)) {
+            $configContent = File::get($configPath);
+            
+            // Update the use_customers value
+            $configContent = preg_replace(
+                "/'use_customers'\s*=>\s*(true|false),/",
+                "'use_customers' => " . ($useCustomers ? 'true' : 'false') . ',',
+                $configContent
+            );
+
+            File::put($configPath, $configContent);
+            
+            if ($useCustomers) {
+                $this->info('✅ Enabled Customers in configuration.');
+            } else {
+                $this->info('✅ Disabled Customers in configuration.');
+            }
+        } else {
+            $this->warn('⚠️  Could not update config/inertia-resource.php. Please set use_customers manually.');
+        }
     }
 
     /**
@@ -212,7 +262,20 @@ class InstallCommand extends Command
 
         if (File::exists($appBladeStub)) {
             if (File::exists($appBladePath)) {
-                $this->warn('app.blade.php already exists. Skipping...');
+                // Check if the existing file has incorrect content
+                $existingContent = File::get($appBladePath);
+                $hasIncorrectVite = str_contains($existingContent, 'resources/js/Pages/{$') || 
+                                    str_contains($existingContent, 'Pages/{$page') ||
+                                    preg_match('/@vite\([^)]*Pages[^)]*\)/', $existingContent);
+                $hasExtraDiv = str_contains($existingContent, '<div id="app">') && str_contains($existingContent, '<slot />');
+                
+                if ($hasIncorrectVite || $hasExtraDiv) {
+                    $this->warn('⚠️  app.blade.php contains incorrect content. Fixing...');
+                    File::copy($appBladeStub, $appBladePath);
+                    $this->info('✅ Fixed app.blade.php with correct Inertia template.');
+                } else {
+                    $this->warn('app.blade.php already exists. Skipping...');
+                }
             } else {
                 File::copy($appBladeStub, $appBladePath);
                 $this->info('Created app.blade.php');
