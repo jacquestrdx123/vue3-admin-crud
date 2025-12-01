@@ -12,7 +12,7 @@ class CreateUserModelCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'make:user-model {--force : Overwrite existing User model}';
+    protected $signature = 'vue-admin-panel:make-user {--force : Overwrite existing User model}';
 
     /**
      * The console command description.

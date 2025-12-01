@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.1] - 2024-12-XX
+
+### Added
+
+- Added `vue-admin-panel:make-user` artisan command to create a User model with all fields and password confirmation
+- New `CreateUserModelCommand` that generates a complete User model with:
+  - Standard authentication fields (name, email, password)
+  - Email verification support
+  - Remember token support
+  - Proper fillable, hidden, and casts arrays
+  - Password hashing via Laravel's 'hashed' cast
+  - Documentation for password confirmation validation
+- New `UserModel.stub` template for User model generation
+- Command supports `--force` option to overwrite existing User models
+
 ## [2.4.0] - 2024-12-XX
 
 ### Added
