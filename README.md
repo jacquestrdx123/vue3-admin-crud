@@ -46,6 +46,8 @@ The installer will automatically:
 - ✅ Publish all package assets (components, config, migrations)
 - ✅ Set up Tailwind CSS configuration
 - ✅ Create admin login page (`resources/js/Pages/Auth/AdminLogin.vue`)
+- ✅ Create admin layouts (`AdminLayout.vue`, `DashboardLayout.vue`)
+- ✅ Create dashboard page (`resources/js/Pages/Dashboard.vue`)
 - ✅ Add admin routes to `routes/web.php` with `/admin` prefix group
 
 > **Note**: If you encounter "Cannot find package 'laravel'" errors, make sure `npm install` completed successfully. The `laravel-vite-plugin` package is required for Vite to work with Laravel.
@@ -61,6 +63,8 @@ php artisan vendor:publish --tag=inertia-resource-config      # Configuration on
 php artisan vendor:publish --tag=inertia-resource-migrations  # Migrations only
 php artisan vendor:publish --tag=inertia-resource-components   # Vue components only
 php artisan vendor:publish --tag=inertia-resource-tailwind    # Tailwind config only
+php artisan vendor:publish --tag=inertia-resource-layouts     # Admin layouts and dashboard only
+php artisan vendor:publish --tag=inertia-resource-login-pages  # Login pages only
 ```
 
 ### Vite Configuration
@@ -245,6 +249,144 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Your admin routes here
     });
 });
+```
+
+## Admin Layout and Dashboard
+
+The installer automatically creates a generic admin layout and dashboard to get you started quickly.
+
+### Admin Layout
+
+The `AdminLayout.vue` component provides a complete admin interface with:
+
+- **Sidebar Navigation**: Collapsible sidebar with navigation menu
+- **Top Bar**: Header with page title and user menu
+- **User Menu**: Dropdown with user info and logout option
+- **Responsive Design**: Mobile-friendly layout that adapts to screen size
+- **Dark Mode Support**: Built-in dark mode styling
+
+**Location**: `resources/js/Layouts/AdminLayout.vue`
+
+### Dashboard Layout
+
+The `DashboardLayout.vue` component wraps `AdminLayout` and provides:
+
+- **Dashboard Header**: Title and description section
+- **Slots**: Flexible slots for filters, stats, and main content
+- **Consistent Styling**: Pre-configured spacing and layout
+
+**Location**: `resources/js/Layouts/DashboardLayout.vue`
+
+### Dashboard Page
+
+A sample dashboard page is created with:
+
+- **Stat Cards**: Display key metrics (Total Users, Revenue, Orders, Growth)
+- **Recent Activity**: List of recent activities
+- **Quick Actions**: Grid of common actions
+
+**Location**: `resources/js/Pages/Dashboard.vue`
+
+### Using the Layouts
+
+#### Basic Usage
+
+```vue
+<template>
+  <AdminLayout>
+    <div class="p-6">
+      <h1 class="text-2xl font-bold">My Admin Page</h1>
+      <!-- Your content here -->
+    </div>
+  </AdminLayout>
+</template>
+
+<script setup>
+import AdminLayout from '@/Layouts/AdminLayout.vue'
+</script>
+```
+
+#### Dashboard Layout Usage
+
+```vue
+<template>
+  <DashboardLayout 
+    title="Dashboard" 
+    description="Welcome to your admin dashboard"
+  >
+    <!-- Stats Section -->
+    <template #stats>
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Total Users"
+          value="1,234"
+          color="indigo"
+          :change="12"
+        />
+        <!-- More stat cards -->
+      </div>
+    </template>
+
+    <!-- Main Content -->
+    <div>
+      <!-- Your dashboard content -->
+    </div>
+  </DashboardLayout>
+</template>
+
+<script setup>
+import DashboardLayout from '@/Layouts/DashboardLayout.vue'
+import StatCard from '@/Components/Dashboard/StatCard.vue'
+</script>
+```
+
+### Customizing the Layouts
+
+You can customize the layouts by editing the files directly:
+
+- **Navigation Items**: Edit the `navigation` computed property in `AdminLayout.vue`
+- **Styling**: Modify Tailwind classes to match your brand
+- **Components**: Replace or extend components as needed
+
+### StatCard Component
+
+The `StatCard` component is included for displaying metrics:
+
+**Location**: `resources/js/Components/Dashboard/StatCard.vue`
+
+**Props**:
+- `label` (required): The stat label
+- `value` (required): The stat value (number or string)
+- `icon`: SVG path string for icon
+- `color`: Color theme (indigo, green, blue, red, purple, yellow, pink)
+- `change`: Percentage change (positive or negative)
+- `description`: Additional description text
+- `format`: Format type (number, currency, percentage)
+- `currency`: Currency symbol (default: '$')
+
+**Example**:
+```vue
+<StatCard
+  label="Revenue"
+  value="45,231"
+  format="currency"
+  currency="$"
+  color="green"
+  :change="8"
+  description="This month"
+/>
+```
+
+### Publishing Layouts
+
+If you need to republish the layout files:
+
+```bash
+# Publish layouts only
+php artisan vendor:publish --tag=inertia-resource-layouts
+
+# Or publish all assets
+php artisan vendor:publish --tag=inertia-resource
 ```
 
 ## Optional: Column Preferences

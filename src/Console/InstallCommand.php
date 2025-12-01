@@ -72,6 +72,11 @@ class InstallCommand extends Command
         $this->createAdminRoutes();
         $this->newLine();
 
+        // Create admin layouts and dashboard
+        $this->info('📐 Creating admin layouts and dashboard...');
+        $this->createAdminLayouts();
+        $this->newLine();
+
         // Install npm dependencies
         $this->info('📥 Installing npm dependencies (this may take a few minutes)...');
         $this->newLine();
@@ -786,6 +791,78 @@ CSS;
                    str_contains($viteConfigContent, '@vitejs/plugin-vue') &&
                    str_contains($viteConfigContent, "resolve:")) {
             $this->comment('✓ vite.config.js already has correct configuration.');
+        }
+    }
+
+    /**
+     * Create admin layouts and dashboard
+     */
+    protected function createAdminLayouts(): void
+    {
+        $layoutsPath = resource_path('js/Layouts');
+        $pagesPath = resource_path('js/Pages');
+        $componentsPath = resource_path('js/Components');
+
+        // Create directories if they don't exist
+        if (!File::exists($layoutsPath)) {
+            File::makeDirectory($layoutsPath, 0755, true);
+        }
+
+        if (!File::exists($pagesPath)) {
+            File::makeDirectory($pagesPath, 0755, true);
+        }
+
+        $dashboardComponentsPath = $componentsPath.'/Dashboard';
+        if (!File::exists($dashboardComponentsPath)) {
+            File::makeDirectory($dashboardComponentsPath, 0755, true);
+        }
+
+        // AdminLayout
+        $adminLayoutStub = __DIR__.'/../../stubs/Layouts/AdminLayout.vue.stub';
+        $adminLayoutPath = $layoutsPath.'/AdminLayout.vue';
+        if (File::exists($adminLayoutStub)) {
+            if (File::exists($adminLayoutPath)) {
+                $this->warn('AdminLayout.vue already exists. Skipping...');
+            } else {
+                File::copy($adminLayoutStub, $adminLayoutPath);
+                $this->info('Created AdminLayout.vue');
+            }
+        }
+
+        // DashboardLayout
+        $dashboardLayoutStub = __DIR__.'/../../stubs/Layouts/DashboardLayout.vue.stub';
+        $dashboardLayoutPath = $layoutsPath.'/DashboardLayout.vue';
+        if (File::exists($dashboardLayoutStub)) {
+            if (File::exists($dashboardLayoutPath)) {
+                $this->warn('DashboardLayout.vue already exists. Skipping...');
+            } else {
+                File::copy($dashboardLayoutStub, $dashboardLayoutPath);
+                $this->info('Created DashboardLayout.vue');
+            }
+        }
+
+        // Dashboard Page
+        $dashboardStub = __DIR__.'/../../stubs/Pages/Dashboard.vue.stub';
+        $dashboardPath = $pagesPath.'/Dashboard.vue';
+        if (File::exists($dashboardStub)) {
+            if (File::exists($dashboardPath)) {
+                $this->warn('Dashboard.vue already exists. Skipping...');
+            } else {
+                File::copy($dashboardStub, $dashboardPath);
+                $this->info('Created Dashboard.vue');
+            }
+        }
+
+        // StatCard Component
+        $statCardStub = __DIR__.'/../../stubs/Components/Dashboard/StatCard.vue.stub';
+        $statCardPath = $dashboardComponentsPath.'/StatCard.vue';
+        if (File::exists($statCardStub)) {
+            if (File::exists($statCardPath)) {
+                $this->warn('StatCard.vue already exists. Skipping...');
+            } else {
+                File::copy($statCardStub, $statCardPath);
+                $this->info('Created StatCard.vue');
+            }
         }
     }
 }

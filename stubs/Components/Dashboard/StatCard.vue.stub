@@ -1,0 +1,103 @@
+<template>
+  <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+    <div class="p-5">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <div :class="[
+            'p-3 rounded-md',
+            `bg-${color}-100 dark:bg-${color}-900`
+          ]">
+            <svg v-if="icon" class="w-6 h-6" :class="`text-${color}-600 dark:text-${color}-400`" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="icon" />
+            </svg>
+          </div>
+        </div>
+        <div class="ml-5 w-0 flex-1">
+          <dl>
+            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+              {{ label }}
+            </dt>
+            <dd class="flex items-baseline">
+              <div class="text-2xl font-semibold text-gray-900 dark:text-white">
+                {{ formattedValue }}
+              </div>
+              <div v-if="change !== null" :class="[
+                'ml-2 flex items-baseline text-sm font-semibold',
+                change > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+              ]">
+                <svg v-if="change > 0" class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+                <svg v-else class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                <span>{{ Math.abs(change) }}%</span>
+              </div>
+            </dd>
+            <dd v-if="description" class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ description }}
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps({
+  label: {
+    type: String,
+    required: true
+  },
+  value: {
+    type: [Number, String],
+    required: true
+  },
+  icon: {
+    type: String,
+    default: null
+  },
+  color: {
+    type: String,
+    default: 'indigo'
+  },
+  change: {
+    type: Number,
+    default: null
+  },
+  description: {
+    type: String,
+    default: null
+  },
+  format: {
+    type: String,
+    default: 'number' // number, currency, percentage
+  },
+  currency: {
+    type: String,
+    default: '$'
+  }
+})
+
+const formattedValue = computed(() => {
+  switch (props.format) {
+    case 'currency':
+      return `${props.currency}${formatNumber(props.value)}`
+    case 'percentage':
+      return `${props.value}%`
+    default:
+      return formatNumber(props.value)
+  }
+})
+
+const formatNumber = (num) => {
+  if (typeof num === 'number') {
+    return num.toLocaleString()
+  }
+  return num
+}
+</script>
+

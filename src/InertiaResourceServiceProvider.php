@@ -79,6 +79,14 @@ class InertiaResourceServiceProvider extends ServiceProvider
             __DIR__.'/../stubs/Pages/Auth/CustomerLogin.vue.stub' => resource_path('js/Pages/Auth/CustomerLogin.vue'),
         ], 'inertia-resource-login-pages');
 
+        // Publish admin layouts and dashboard
+        $this->publishes([
+            __DIR__.'/../stubs/Layouts/AdminLayout.vue.stub' => resource_path('js/Layouts/AdminLayout.vue'),
+            __DIR__.'/../stubs/Layouts/DashboardLayout.vue.stub' => resource_path('js/Layouts/DashboardLayout.vue'),
+            __DIR__.'/../stubs/Pages/Dashboard.vue.stub' => resource_path('js/Pages/Dashboard.vue'),
+            __DIR__.'/../stubs/Components/Dashboard/StatCard.vue.stub' => resource_path('js/Components/Dashboard/StatCard.vue'),
+        ], 'inertia-resource-layouts');
+
         // Publish all assets (config, migrations, components) together
         $this->publishes([
             __DIR__.'/../config/inertia-resource.php' => config_path('inertia-resource.php'),
@@ -87,6 +95,10 @@ class InertiaResourceServiceProvider extends ServiceProvider
             __DIR__.'/../tailwind.config.js' => base_path('tailwind.config.js'),
             __DIR__.'/../resources/css/app.css' => resource_path('css/vue-admin-panel.css'),
             __DIR__.'/../stubs/vite.config.js.stub' => base_path('vite.config.js'),
+            __DIR__.'/../stubs/Layouts/AdminLayout.vue.stub' => resource_path('js/Layouts/AdminLayout.vue'),
+            __DIR__.'/../stubs/Layouts/DashboardLayout.vue.stub' => resource_path('js/Layouts/DashboardLayout.vue'),
+            __DIR__.'/../stubs/Pages/Dashboard.vue.stub' => resource_path('js/Pages/Dashboard.vue'),
+            __DIR__.'/../stubs/Components/Dashboard/StatCard.vue.stub' => resource_path('js/Components/Dashboard/StatCard.vue'),
         ], 'inertia-resource');
     }
 }

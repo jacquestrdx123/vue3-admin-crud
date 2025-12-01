@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.3] - 2024-12-XX
+
+### Added
+
+- Added generic `AdminLayout.vue` component with sidebar navigation, top bar, and user menu
+- Added `DashboardLayout.vue` component that wraps AdminLayout with dashboard-specific features
+- Added sample `Dashboard.vue` page with stat cards, recent activity, and quick actions
+- Added `StatCard.vue` component for displaying metrics with icons, colors, and change indicators
+- InstallCommand now automatically creates admin layouts and dashboard during installation
+- Added `inertia-resource-layouts` publish tag for layout files
+- Comprehensive documentation for admin layouts and dashboard in README
+
+### Changed
+
+- InstallCommand now creates layout and dashboard files automatically
+- Updated README with Admin Layout and Dashboard section including usage examples
+
 ## [2.4.2] - 2024-12-XX
 
 ### Changed
