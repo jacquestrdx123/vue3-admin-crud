@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2024-12-XX
+
+### Added
+
+- Automatic admin routes generation during installation
+- Admin authentication routes with `/admin` prefix group
+- `GET /admin/login` route for displaying admin login page
+- `POST /admin/login` route for handling admin authentication
+- Admin login page creation (`resources/js/Pages/Auth/AdminLogin.vue`)
+- Comprehensive admin authentication documentation in README
+
+### Changed
+
+- InstallCommand now automatically creates admin routes in `routes/web.php`
+- Updated README with admin authentication section and examples
+- Updated vite.config.js example in README to use correct `refreshPaths` import
+
 ## [2.0.0] - 2024-12-XX
 
 ### Added
