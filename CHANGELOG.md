@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2024-12-XX
+
+### Added
+- Full Vite 5.4.0 support with laravel-vite-plugin@^1.0.0
+- Automatic vite.config.js import detection and fixing
+- Enhanced InstallCommand with automatic npm install
+- Improved error handling and fallback mechanisms
+
+### Changed
+- **BREAKING**: Updated to Vite 5.4.0 (from Vite 4.5.0)
+- **BREAKING**: Updated laravel-vite-plugin to ^1.0.0 (from 0.7.2)
+- vite.config.js stub now uses `import laravel, { refreshPaths } from 'laravel-vite-plugin'`
+- vite.config.js now uses `refresh: refreshPaths` instead of `refresh: true`
+- InstallCommand automatically runs npm install without confirmation
+- InstallCommand automatically fixes incorrect vite.config.js imports
+
+### Fixed
+- Fixed vite.config.js import detection to correctly identify and fix `@laravel/vite-plugin` (incorrect) to `laravel-vite-plugin` (correct)
+- Fixed vite.config.js import detection to handle old `laravel/vite-plugin` pattern
+- Resolved "ERESOLVE unable to resolve dependency tree" errors
+- Added fallback to use `--legacy-peer-deps` if npm install fails initially
+
 ## [1.1.5] - 2024-12-XX
 
 ### Fixed
