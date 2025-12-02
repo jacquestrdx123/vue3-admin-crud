@@ -899,6 +899,9 @@ CSS;
      */
     protected function createAdminRoutes(): void
     {
+        // Create middleware files first
+        $this->createAdminMiddleware();
+        
         $routesPath = base_path('routes');
         $adminRoutesFile = "{$routesPath}/admin.php";
         $webRoutesFile = "{$routesPath}/web.php";
@@ -917,8 +920,8 @@ CSS;
         $adminRoutesContent .= "use InertiaResource\\Http\\Controllers\\UserColumnPreferenceController;\n\n";
         $adminRoutesContent .= "// Admin routes\n";
         $adminRoutesContent .= "Route::prefix('admin')->name('admin.')->group(function () {\n";
-        $adminRoutesContent .= "    // Login routes (guest middleware)\n";
-        $adminRoutesContent .= "    Route::middleware(['guest'])->group(function () {\n";
+        $adminRoutesContent .= "    // Login routes (guest middleware - redirects to admin.dashboard if authenticated)\n";
+        $adminRoutesContent .= "    Route::middleware([App\\Http\\Middleware\\RedirectIfAuthenticatedAdmin::class])->group(function () {\n";
         $adminRoutesContent .= "        Route::get('/login', function () {\n";
         $adminRoutesContent .= "            return Inertia::render('Auth/AdminLogin');\n";
         $adminRoutesContent .= "        })->name('login');\n";
@@ -940,8 +943,8 @@ CSS;
         $adminRoutesContent .= "        })->name('login');\n";
         $adminRoutesContent .= "    });\n";
         $adminRoutesContent .= "    \n";
-        $adminRoutesContent .= "    // Protected admin routes (auth middleware - uses default web guard)\n";
-        $adminRoutesContent .= "    Route::middleware(['auth'])->group(function () {\n";
+        $adminRoutesContent .= "    // Protected admin routes (auth middleware - redirects to admin.login if not authenticated)\n";
+        $adminRoutesContent .= "    Route::middleware([App\\Http\\Middleware\\AuthenticateAdmin::class])->group(function () {\n";
         $adminRoutesContent .= "        Route::get('/', function () {\n";
         $adminRoutesContent .= "            return Inertia::render('Dashboard');\n";
         $adminRoutesContent .= "        })->name('dashboard');\n";
@@ -955,7 +958,7 @@ CSS;
         $adminRoutesContent .= "    });\n";
         $adminRoutesContent .= "});\n\n";
         $adminRoutesContent .= "// API routes for column preferences\n";
-        $adminRoutesContent .= "Route::prefix('api')->middleware(['auth', 'web'])->group(function () {\n";
+        $adminRoutesContent .= "Route::prefix('api')->middleware([App\\Http\\Middleware\\AuthenticateAdmin::class, 'web'])->group(function () {\n";
         $adminRoutesContent .= "    Route::get('/user-column-preferences/{resourceSlug}', [UserColumnPreferenceController::class, 'show']);\n";
         $adminRoutesContent .= "    Route::post('/user-column-preferences/{resourceSlug}', [UserColumnPreferenceController::class, 'store']);\n";
         $adminRoutesContent .= "    Route::delete('/user-column-preferences/{resourceSlug}', [UserColumnPreferenceController::class, 'destroy']);\n";
@@ -1046,6 +1049,9 @@ CSS;
             return;
         }
 
+        // Create middleware files first
+        $this->createCustomerMiddleware();
+
         // Check if customer guard is configured, if not, configure it
         $this->ensureCustomerGuardConfigured();
 
@@ -1065,8 +1071,8 @@ CSS;
         $customerRoutesContent = "<?php\n\n";
         $customerRoutesContent .= "use Inertia\\Inertia;\n\n";
         $customerRoutesContent .= "// Customer routes (root level, uses customer guard)\n";
-        $customerRoutesContent .= "// Customer login routes (guest middleware - redirects to /login if already authenticated)\n";
-        $customerRoutesContent .= "Route::middleware(['guest:customer'])->group(function () {\n";
+        $customerRoutesContent .= "// Customer login routes (guest middleware - redirects to customer.dashboard if authenticated)\n";
+        $customerRoutesContent .= "Route::middleware([App\\Http\\Middleware\\RedirectIfAuthenticatedCustomer::class])->group(function () {\n";
         $customerRoutesContent .= "    Route::get('/login', function () {\n";
         $customerRoutesContent .= "        return Inertia::render('Auth/CustomerLogin');\n";
         $customerRoutesContent .= "    })->name('customer.login');\n";
@@ -1079,7 +1085,7 @@ CSS;
         $customerRoutesContent .= "        \n";
         $customerRoutesContent .= "        if (\\Illuminate\\Support\\Facades\\Auth::guard('customer')->attempt(\$credentials, \$request->boolean('remember'))) {\n";
         $customerRoutesContent .= "            \$request->session()->regenerate();\n";
-        $customerRoutesContent .= "            return redirect()->intended('/');\n";
+        $customerRoutesContent .= "            return redirect()->intended(route('customer.dashboard'));\n";
         $customerRoutesContent .= "        }\n";
         $customerRoutesContent .= "        \n";
         $customerRoutesContent .= "        throw \\Illuminate\\Validation\\ValidationException::withMessages([\n";
@@ -1087,8 +1093,8 @@ CSS;
         $customerRoutesContent .= "        ]);\n";
         $customerRoutesContent .= "    })->name('customer.login.post');\n";
         $customerRoutesContent .= "});\n\n";
-        $customerRoutesContent .= "// Protected customer routes (auth:customer guard - redirects to /login if not authenticated)\n";
-        $customerRoutesContent .= "Route::middleware(['auth:customer'])->group(function () {\n";
+        $customerRoutesContent .= "// Protected customer routes (auth:customer guard - redirects to customer.login if not authenticated)\n";
+        $customerRoutesContent .= "Route::middleware([App\\Http\\Middleware\\AuthenticateCustomer::class])->group(function () {\n";
         $customerRoutesContent .= "    Route::get('/', function () {\n";
         $customerRoutesContent .= "        return Inertia::render('Dashboard');\n";
         $customerRoutesContent .= "    })->name('customer.dashboard');\n";
@@ -1172,6 +1178,62 @@ CSS;
         $this->line("    })->name('customer.logout');");
         $this->line("});");
         $this->newLine();
+    }
+
+    /**
+     * Create admin authentication middleware
+     */
+    protected function createAdminMiddleware(): void
+    {
+        $middlewarePath = app_path('Http/Middleware');
+        
+        if (!File::exists($middlewarePath)) {
+            File::makeDirectory($middlewarePath, 0755, true);
+        }
+        
+        // Create AuthenticateAdmin middleware
+        $authenticateAdminPath = "{$middlewarePath}/AuthenticateAdmin.php";
+        if (!File::exists($authenticateAdminPath)) {
+            $stub = File::get(__DIR__.'/../../stubs/Middleware/AuthenticateAdmin.stub');
+            File::put($authenticateAdminPath, $stub);
+            $this->info('✅ Created AuthenticateAdmin middleware');
+        }
+        
+        // Create RedirectIfAuthenticatedAdmin middleware
+        $redirectIfAuthAdminPath = "{$middlewarePath}/RedirectIfAuthenticatedAdmin.php";
+        if (!File::exists($redirectIfAuthAdminPath)) {
+            $stub = File::get(__DIR__.'/../../stubs/Middleware/RedirectIfAuthenticatedAdmin.stub');
+            File::put($redirectIfAuthAdminPath, $stub);
+            $this->info('✅ Created RedirectIfAuthenticatedAdmin middleware');
+        }
+    }
+    
+    /**
+     * Create customer authentication middleware
+     */
+    protected function createCustomerMiddleware(): void
+    {
+        $middlewarePath = app_path('Http/Middleware');
+        
+        if (!File::exists($middlewarePath)) {
+            File::makeDirectory($middlewarePath, 0755, true);
+        }
+        
+        // Create AuthenticateCustomer middleware
+        $authenticateCustomerPath = "{$middlewarePath}/AuthenticateCustomer.php";
+        if (!File::exists($authenticateCustomerPath)) {
+            $stub = File::get(__DIR__.'/../../stubs/Middleware/AuthenticateCustomer.stub');
+            File::put($authenticateCustomerPath, $stub);
+            $this->info('✅ Created AuthenticateCustomer middleware');
+        }
+        
+        // Create RedirectIfAuthenticatedCustomer middleware
+        $redirectIfAuthCustomerPath = "{$middlewarePath}/RedirectIfAuthenticatedCustomer.php";
+        if (!File::exists($redirectIfAuthCustomerPath)) {
+            $stub = File::get(__DIR__.'/../../stubs/Middleware/RedirectIfAuthenticatedCustomer.stub');
+            File::put($redirectIfAuthCustomerPath, $stub);
+            $this->info('✅ Created RedirectIfAuthenticatedCustomer middleware');
+        }
     }
 
     /**
