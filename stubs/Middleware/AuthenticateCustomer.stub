@@ -4,9 +4,32 @@ namespace App\Http\Middleware;
 
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthenticateCustomer extends Middleware
 {
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @param  string[]  ...$guards
+     * @return mixed
+     */
+    public function handle($request, \Closure $next, ...$guards)
+    {
+        // Check if user is authenticated with web guard (admin) - block access
+        if (Auth::guard('web')->check()) {
+            // Admin trying to access customer routes - redirect to admin dashboard
+            return redirect()->route('admin.dashboard');
+        }
+
+        // Use customer guard for customer authentication
+        $guards = empty($guards) ? ['customer'] : $guards;
+
+        return parent::handle($request, $next, ...$guards);
+    }
+
     /**
      * Get the path the user should be redirected to when they are not authenticated.
      */

@@ -16,12 +16,14 @@ class RedirectIfAuthenticatedCustomer
      */
     public function handle(Request $request, Closure $next, string ...$guards): Response
     {
-        $guards = empty($guards) ? ['customer'] : $guards;
+        // Check if customer (customer guard) is authenticated - redirect to customer dashboard
+        if (Auth::guard('customer')->check()) {
+            return redirect()->route('customer.dashboard');
+        }
 
-        foreach ($guards as $guard) {
-            if (Auth::guard($guard)->check()) {
-                return redirect()->route('customer.dashboard');
-            }
+        // Check if admin is authenticated - redirect to admin dashboard (wrong guard)
+        if (Auth::guard('web')->check()) {
+            return redirect()->route('admin.dashboard');
         }
 
         return $next($request);
