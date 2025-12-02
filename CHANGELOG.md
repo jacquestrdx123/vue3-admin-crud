@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.31] - 2024-12-XX
+
+### Added
+
+- Database-driven menu system with MenuGroup and MenuItem models
+- MenuBuilder helper class (`InertiaResource\Inertia\MenuBuilder`) to build menu structure from database
+- MenuBuilder Vue component with drag-and-drop functionality for reordering menu groups and items
+- CreateMenuModelsCommand (`vue-admin-panel:create-menu-models`) to generate menu models and migrations
+- Menu configuration options: `menu_group_model`, `menu_item_model`, `menu_show_items_without_permission`
+- Support for permission-based menu item visibility
+- Support for hierarchical menu items with parent/child relationships
+- Integration of MenuBuilder into TopRightMenu for easy access
+
+### Changed
+
+- ServiceProvider now publishes menu migrations and model stubs
+- MenuBuilder automatically checks user permissions and filters menu items accordingly
+
 ## [2.4.6] - 2024-12-XX
 
 ### Added
