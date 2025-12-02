@@ -192,6 +192,119 @@ class InstallCommand extends Command
                 $configContent
             );
 
+            if ($useCustomers) {
+                // Ask for customer model name
+                $defaultCustomerModel = 'App\\Models\\Customer';
+                $customerModel = $this->ask('What should the Customer model be called?', $defaultCustomerModel);
+                
+                // Normalize the input - if no namespace, assume App\Models
+                if (strpos($customerModel, '\\') === false) {
+                    $customerModel = 'App\\Models\\' . $customerModel;
+                }
+                
+                // Validate the model class name format
+                if (!preg_match('/^[A-Za-z0-9\\\\]+$/', $customerModel)) {
+                    $this->error('Invalid model class name. Using default: ' . $defaultCustomerModel);
+                    $customerModel = $defaultCustomerModel;
+                }
+                
+                // Create the customer model
+                $this->info('📦 Creating Customer model...');
+                $this->newLine();
+                
+                // Extract model name and namespace
+                $modelParts = explode('\\', $customerModel);
+                $modelName = end($modelParts);
+                $namespace = implode('\\', array_slice($modelParts, 0, -1));
+                
+                // Determine model path based on namespace
+                if ($namespace === 'App\\Models' || $namespace === 'App') {
+                    // Use standard Laravel structure
+                    $modelPath = app_path('Models/' . $modelName . '.php');
+                } else {
+                    // Custom namespace - create in appropriate directory
+                    $relativePath = str_replace('App\\', '', $namespace);
+                    $relativePath = str_replace('\\', '/', $relativePath);
+                    $modelPath = app_path($relativePath . '/' . $modelName . '.php');
+                }
+                
+                // Check if model already exists
+                if (class_exists($customerModel)) {
+                    $this->warn("⚠️  Customer model '{$customerModel}' already exists. Skipping model creation.");
+                } else {
+                    // Create model directory if needed
+                    $modelDir = dirname($modelPath);
+                    if (!File::exists($modelDir)) {
+                        File::makeDirectory($modelDir, 0755, true);
+                    }
+                    
+                    // Create the model file
+                    $modelStub = "<?php\n\n";
+                    $modelStub .= "namespace {$namespace};\n\n";
+                    $modelStub .= "use Illuminate\\Database\\Eloquent\\Factories\\HasFactory;\n";
+                    $modelStub .= "use Illuminate\\Foundation\\Auth\\User as Authenticatable;\n";
+                    $modelStub .= "use Illuminate\\Notifications\\Notifiable;\n\n";
+                    $modelStub .= "class {$modelName} extends Authenticatable\n";
+                    $modelStub .= "{\n";
+                    $modelStub .= "    use HasFactory, Notifiable;\n\n";
+                    $modelStub .= "    /**\n";
+                    $modelStub .= "     * The attributes that are mass assignable.\n";
+                    $modelStub .= "     *\n";
+                    $modelStub .= "     * @var array<int, string>\n";
+                    $modelStub .= "     */\n";
+                    $modelStub .= "    protected \$fillable = [\n";
+                    $modelStub .= "        'name',\n";
+                    $modelStub .= "        'email',\n";
+                    $modelStub .= "        'password',\n";
+                    $modelStub .= "    ];\n\n";
+                    $modelStub .= "    /**\n";
+                    $modelStub .= "     * The attributes that should be hidden for serialization.\n";
+                    $modelStub .= "     *\n";
+                    $modelStub .= "     * @var array<int, string>\n";
+                    $modelStub .= "     */\n";
+                    $modelStub .= "    protected \$hidden = [\n";
+                    $modelStub .= "        'password',\n";
+                    $modelStub .= "        'remember_token',\n";
+                    $modelStub .= "    ];\n\n";
+                    $modelStub .= "    /**\n";
+                    $modelStub .= "     * Get the attributes that should be cast.\n";
+                    $modelStub .= "     *\n";
+                    $modelStub .= "     * @return array<string, string>\n";
+                    $modelStub .= "     */\n";
+                    $modelStub .= "    protected function casts(): array\n";
+                    $modelStub .= "    {\n";
+                    $modelStub .= "        return [\n";
+                    $modelStub .= "            'email_verified_at' => 'datetime',\n";
+                    $modelStub .= "            'password' => 'hashed',\n";
+                    $modelStub .= "        ];\n";
+                    $modelStub .= "    }\n";
+                    $modelStub .= "}\n";
+                    
+                    File::put($modelPath, $modelStub);
+                    $this->info("✅ Created Customer model: {$customerModel}");
+                    $this->newLine();
+                }
+                
+                // Update config with customer model
+                $configContent = preg_replace(
+                    "/'customer_model'\s*=>\s*null,/",
+                    "'customer_model' => \\{$customerModel}::class,",
+                    $configContent
+                );
+                
+                // Ask if user wants to create Customer Resource
+                if ($this->confirm('Do you want to create a Resource for the Customer model?', true)) {
+                    $this->info('📦 Creating Customer Resource...');
+                    $this->newLine();
+                    
+                    $this->call('make:inertia-resource', [
+                        'model' => $customerModel,
+                        '--all' => true,
+                    ]);
+                    $this->newLine();
+                }
+            }
+
             File::put($configPath, $configContent);
             
             if ($useCustomers) {
