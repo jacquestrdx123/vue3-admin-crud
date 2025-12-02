@@ -1,14 +1,12 @@
 // {{ routeName }} routes
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::prefix('{{ routePrefix }}')->name('{{ routePrefix }}.')->middleware(['web'])->group(function () {
-        Route::get('/', [{{ controllerNamespace }}\{{ controllerName }}::class, 'index'])->name('index');
-        Route::get('/create', [{{ controllerNamespace }}\{{ controllerName }}::class, 'create'])->name('create');
-        Route::post('/', [{{ controllerNamespace }}\{{ controllerName }}::class, 'store'])->name('store');
-        Route::get('/{id}', [{{ controllerNamespace }}\{{ controllerName }}::class, 'show'])->name('show');
-        Route::get('/{id}/edit', [{{ controllerNamespace }}\{{ controllerName }}::class, 'edit'])->name('edit');
-        Route::put('/{id}', [{{ controllerNamespace }}\{{ controllerName }}::class, 'update'])->name('update');
-        Route::delete('/{id}', [{{ controllerNamespace }}\{{ controllerName }}::class, 'destroy'])->name('destroy');
-        Route::post('/bulk-action', [{{ controllerNamespace }}\{{ controllerName }}::class, 'bulkAction'])->name('bulk-action');
-    });
+Route::prefix('{{ routePrefix }}')->name('{{ routePrefix }}.')->middleware([App\Http\Middleware\AuthenticateAdmin::class])->group(function () {
+    Route::get('/', [{{ controllerNamespace }}\{{ controllerName }}::class, 'index'])->name('index');
+    Route::get('/create', [{{ controllerNamespace }}\{{ controllerName }}::class, 'create'])->name('create');
+    Route::post('/', [{{ controllerNamespace }}\{{ controllerName }}::class, 'store'])->name('store');
+    Route::get('/{id}', [{{ controllerNamespace }}\{{ controllerName }}::class, 'show'])->name('show');
+    Route::get('/{id}/edit', [{{ controllerNamespace }}\{{ controllerName }}::class, 'edit'])->name('edit');
+    Route::put('/{id}', [{{ controllerNamespace }}\{{ controllerName }}::class, 'update'])->name('update');
+    Route::delete('/{id}', [{{ controllerNamespace }}\{{ controllerName }}::class, 'destroy'])->name('destroy');
+    Route::post('/bulk-action', [{{ controllerNamespace }}\{{ controllerName }}::class, 'bulkAction'])->name('bulk-action');
 });
 

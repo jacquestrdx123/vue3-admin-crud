@@ -62,6 +62,11 @@ class InstallCommand extends Command
         $this->createJavaScriptEntryPoint();
         $this->newLine();
 
+        // Clean up incorrectly placed routes in web.php
+        $this->info('🧹 Cleaning up routes in web.php...');
+        $this->cleanupWebRoutes();
+        $this->newLine();
+
         // Create login pages
         $this->info('🔐 Creating login pages...');
         $this->createLoginPages();
@@ -1233,6 +1238,85 @@ CSS;
             $stub = File::get(__DIR__.'/../../stubs/Middleware/RedirectIfAuthenticatedCustomer.stub');
             File::put($redirectIfAuthCustomerPath, $stub);
             $this->info('✅ Created RedirectIfAuthenticatedCustomer middleware');
+        }
+    }
+
+    /**
+     * Clean up incorrectly placed routes from web.php
+     */
+    protected function cleanupWebRoutes(): void
+    {
+        $webRoutesFile = base_path('routes/web.php');
+        
+        if (!File::exists($webRoutesFile)) {
+            return;
+        }
+
+        $webRoutesContent = File::get($webRoutesFile);
+        $originalContent = $webRoutesContent;
+        $cleaned = false;
+
+        // Remove admin routes that were incorrectly added directly to web.php
+        // Look for Route::prefix('admin') groups that are not part of a require statement
+        $lines = explode("\n", $webRoutesContent);
+        $cleanedLines = [];
+        $skipUntilBraceCount = null;
+        $braceCount = 0;
+        $inAdminGroup = false;
+        $inRequireStatement = false;
+
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
+            
+            // Check if this line is a require statement for admin.php or customer.php
+            if (preg_match("/require\s+__DIR__\s*\.\s*['\"]\/admin\.php['\"]/", $line) ||
+                preg_match("/require\s+__DIR__\s*\.\s*['\"]\/customer\.php['\"]/", $line)) {
+                $cleanedLines[] = $line;
+                continue;
+            }
+
+            // Check if we're starting an admin route group (not in a require statement)
+            if (!$inAdminGroup && preg_match("/Route::prefix\(['\"]admin['\"]\)/", $line)) {
+                $inAdminGroup = true;
+                $skipUntilBraceCount = $braceCount;
+                $braceCount += substr_count($line, '(') - substr_count($line, ')');
+                $cleaned = true;
+                continue; // Skip this line
+            }
+
+            // Check if we're starting a customer route group (not in a require statement)
+            if (!$inAdminGroup && preg_match("/Route::middleware\(\[.*AuthenticateCustomer/", $line)) {
+                $inAdminGroup = true;
+                $skipUntilBraceCount = $braceCount;
+                $braceCount += substr_count($line, '(') - substr_count($line, ')');
+                $cleaned = true;
+                continue; // Skip this line
+            }
+
+            // If we're skipping an admin/customer route group, track braces
+            if ($inAdminGroup && $skipUntilBraceCount !== null) {
+                $braceCount += substr_count($line, '(') - substr_count($line, ')');
+                
+                // Check if we've closed the route group (brace count back to original or less)
+                if ($braceCount <= $skipUntilBraceCount) {
+                    $inAdminGroup = false;
+                    $skipUntilBraceCount = null;
+                    $braceCount = 0;
+                }
+                continue; // Skip this line
+            }
+
+            // Normal line - keep it
+            $cleanedLines[] = $line;
+        }
+
+        if ($cleaned) {
+            $webRoutesContent = implode("\n", $cleanedLines);
+            File::put($webRoutesFile, $webRoutesContent);
+            $this->info('✅ Removed incorrectly placed admin/customer routes from web.php');
+            $this->comment('   Routes should be in admin.php or customer.php, not directly in web.php');
+        } else {
+            $this->comment('✅ No cleanup needed in web.php');
         }
     }
 

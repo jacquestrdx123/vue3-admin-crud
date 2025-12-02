@@ -171,15 +171,11 @@ class CreateInertiaResourceCommand extends Command
     protected function generateRoutes(string $modelName, string $controllerName, string $controllerNamespace, string $slug): void
     {
         $routesPath = base_path('routes');
-        $routesFile = "{$routesPath}/web.php";
+        $adminRoutesFile = "{$routesPath}/admin.php";
 
-        // Check if routes file exists, otherwise try api.php
-        if (!File::exists($routesFile)) {
-            $routesFile = "{$routesPath}/api.php";
-        }
-
-        if (!File::exists($routesFile)) {
-            $this->warn("⚠️  Could not find routes file. Please add routes manually:");
+        // Check if admin.php exists, if not, warn user
+        if (!File::exists($adminRoutesFile)) {
+            $this->warn("⚠️  Could not find routes/admin.php file. Please run 'php artisan vue-admin-panel:install' first.");
             $this->displayRoutes($modelName, $controllerName, $controllerNamespace, $slug);
             return;
         }
@@ -190,20 +186,39 @@ class CreateInertiaResourceCommand extends Command
         $stub = str_replace('{{ controllerName }}', $controllerName, $stub);
         $stub = str_replace('{{ routeName }}', "admin.{$slug}", $stub);
 
-        $routesContent = File::get($routesFile);
+        $routesContent = File::get($adminRoutesFile);
         
-        // Check if routes already exist
-        if (strpos($routesContent, "Route::prefix('admin')->name('admin.')->group(function ()") !== false && 
-            strpos($routesContent, "Route::prefix('{$slug}')") !== false) {
-            $this->warn("⚠️  Routes for '{$slug}' already exist in routes file. Skipping route generation.");
+        // Check if routes already exist in admin.php
+        if (strpos($routesContent, "Route::prefix('{$slug}')") !== false) {
+            $this->warn("⚠️  Routes for '{$slug}' already exist in routes/admin.php. Skipping route generation.");
             $this->displayRoutes($modelName, $controllerName, $controllerNamespace, $slug);
             return;
         }
 
-        // Append routes to file
-        $routesContent .= "\n\n".$stub;
-        File::put($routesFile, $routesContent);
-        $this->info("✅ Added routes to routes file");
+        // Find the admin prefix group and add routes inside it
+        // Look for the closing of the protected admin routes group (after logout route)
+        $insertPosition = strrpos($routesContent, "});\n\n// API routes");
+        
+        if ($insertPosition !== false) {
+            // Insert before API routes section
+            $beforeApi = substr($routesContent, 0, $insertPosition);
+            $afterApi = substr($routesContent, $insertPosition);
+            $routesContent = $beforeApi . "\n" . $stub . "\n" . $afterApi;
+        } else {
+            // If API routes section not found, append before the closing of admin prefix group
+            $insertPosition = strrpos($routesContent, "});\n\n// API routes for column preferences");
+            if ($insertPosition !== false) {
+                $beforeApi = substr($routesContent, 0, $insertPosition);
+                $afterApi = substr($routesContent, $insertPosition);
+                $routesContent = $beforeApi . "\n" . $stub . "\n" . $afterApi;
+            } else {
+                // Fallback: append to end of file
+                $routesContent .= "\n\n" . $stub;
+            }
+        }
+
+        File::put($adminRoutesFile, $routesContent);
+        $this->info("✅ Added routes to routes/admin.php");
     }
 
     /**
@@ -212,19 +227,18 @@ class CreateInertiaResourceCommand extends Command
     protected function displayRoutes(string $modelName, string $controllerName, string $controllerNamespace, string $slug): void
     {
         $this->newLine();
-        $this->comment("Add these routes to your routes file:");
+        $this->comment("Add these routes to your routes/admin.php file inside the admin prefix group:");
         $this->newLine();
-        $this->line("Route::prefix('admin')->name('admin.')->group(function () {");
-        $this->line("    Route::prefix('{$slug}')->name('{$slug}.')->middleware(['web'])->group(function () {");
-        $this->line("        Route::get('/', [{$controllerNamespace}\\{$controllerName}::class, 'index'])->name('index');");
-        $this->line("        Route::get('/create', [{$controllerNamespace}\\{$controllerName}::class, 'create'])->name('create');");
-        $this->line("        Route::post('/', [{$controllerNamespace}\\{$controllerName}::class, 'store'])->name('store');");
-        $this->line("        Route::get('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'show'])->name('show');");
-        $this->line("        Route::get('/{id}/edit', [{$controllerNamespace}\\{$controllerName}::class, 'edit'])->name('edit');");
-        $this->line("        Route::put('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'update'])->name('update');");
-        $this->line("        Route::delete('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'destroy'])->name('destroy');");
-        $this->line("        Route::post('/bulk-action', [{$controllerNamespace}\\{$controllerName}::class, 'bulkAction'])->name('bulk-action');");
-        $this->line("    });");
+        $this->line("// {$slug} routes");
+        $this->line("Route::prefix('{$slug}')->name('{$slug}.')->middleware([App\\Http\\Middleware\\AuthenticateAdmin::class])->group(function () {");
+        $this->line("    Route::get('/', [{$controllerNamespace}\\{$controllerName}::class, 'index'])->name('index');");
+        $this->line("    Route::get('/create', [{$controllerNamespace}\\{$controllerName}::class, 'create'])->name('create');");
+        $this->line("    Route::post('/', [{$controllerNamespace}\\{$controllerName}::class, 'store'])->name('store');");
+        $this->line("    Route::get('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'show'])->name('show');");
+        $this->line("    Route::get('/{id}/edit', [{$controllerNamespace}\\{$controllerName}::class, 'edit'])->name('edit');");
+        $this->line("    Route::put('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'update'])->name('update');");
+        $this->line("    Route::delete('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'destroy'])->name('destroy');");
+        $this->line("    Route::post('/bulk-action', [{$controllerNamespace}\\{$controllerName}::class, 'bulkAction'])->name('bulk-action');");
         $this->line("});");
         $this->newLine();
     }
