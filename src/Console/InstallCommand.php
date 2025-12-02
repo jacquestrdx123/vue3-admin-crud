@@ -329,57 +329,171 @@ class InstallCommand extends Command
         
         if (!File::exists($authConfigPath)) {
             $this->warn('⚠️  Could not find config/auth.php file. Please configure customer guard manually.');
+            $this->displayGuardConfigurationInstructions($customerModel);
             return;
         }
 
         $authConfigContent = File::get($authConfigPath);
+        $originalContent = $authConfigContent;
         
-        // Check if customer guard already exists
-        if (strpos($authConfigContent, "'customer' => [") !== false && 
-            strpos($authConfigContent, "'customers' => [") !== false) {
+        // Check if customer guard already exists (check for both single and double quotes)
+        $hasCustomerGuard = (strpos($authConfigContent, "'customer' => [") !== false || 
+                            strpos($authConfigContent, '"customer" => [') !== false) &&
+                           (strpos($authConfigContent, "'customers' => [") !== false || 
+                            strpos($authConfigContent, '"customers" => [') !== false);
+        
+        if ($hasCustomerGuard) {
             $this->comment('⚠️  Customer guard already configured in config/auth.php');
             return;
         }
         
-        // Add customer provider to providers array (before the closing bracket)
-        if (strpos($authConfigContent, "'customers' => [") === false) {
-            // Find the last provider entry and add after it
+        // Add customer provider to providers array
+        $hasCustomersProvider = strpos($authConfigContent, "'customers' => [") !== false || 
+                               strpos($authConfigContent, '"customers" => [') !== false;
+        
+        if (!$hasCustomersProvider) {
             $customersProvider = "        'customers' => [\n";
             $customersProvider .= "            'driver' => 'eloquent',\n";
             $customersProvider .= "            'model' => {$customerModel}::class,\n";
             $customersProvider .= "        ],\n";
             
-            // Find the providers array closing bracket
-            if (preg_match("/('providers'\s*=>\s*\[[^\]]*)(\s+\],)/s", $authConfigContent, $matches)) {
+            // Improved regex: match providers array with better handling of nested content
+            // Match from 'providers' => [ to the closing ], that's not inside nested arrays
+            $providersPattern = "/(\s*'providers'\s*=>\s*\[)((?:(?:[^\[\]]++|\[(?2)\])++|(?2))*?)(\s+\],)/s";
+            
+            if (preg_match($providersPattern, $authConfigContent, $matches)) {
+                // Insert before the closing bracket
                 $authConfigContent = str_replace(
                     $matches[0],
-                    $matches[1] . "\n" . $customersProvider . $matches[2],
+                    $matches[1] . $matches[2] . "\n" . $customersProvider . $matches[4],
                     $authConfigContent
                 );
+            } else {
+                // Fallback: find the providers array more simply
+                if (preg_match("/(\s*'providers'\s*=>\s*\[[^\]]*?)(\s+\],)/s", $authConfigContent, $matches)) {
+                    $authConfigContent = str_replace(
+                        $matches[0],
+                        $matches[1] . "\n" . $customersProvider . $matches[2],
+                        $authConfigContent
+                    );
+                } else {
+                    $this->warn('⚠️  Could not find providers array in config/auth.php. Please add manually.');
+                    $this->displayGuardConfigurationInstructions($customerModel);
+                    return;
+                }
             }
         }
         
-        // Add customer guard to guards array (before the closing bracket)
-        if (strpos($authConfigContent, "'customer' => [") === false) {
-            // Find the last guard entry and add after it
+        // Add customer guard to guards array
+        $hasCustomerGuardEntry = strpos($authConfigContent, "'customer' => [") !== false || 
+                                strpos($authConfigContent, '"customer" => [') !== false;
+        
+        if (!$hasCustomerGuardEntry) {
             $customerGuard = "        'customer' => [\n";
             $customerGuard .= "            'driver' => 'session',\n";
             $customerGuard .= "            'provider' => 'customers',\n";
             $customerGuard .= "        ],\n";
             
-            // Find the guards array closing bracket
-            if (preg_match("/('guards'\s*=>\s*\[[^\]]*)(\s+\],)/s", $authConfigContent, $matches)) {
+            // Improved regex: match guards array with better handling of nested content
+            $guardsPattern = "/(\s*'guards'\s*=>\s*\[)((?:(?:[^\[\]]++|\[(?2)\])++|(?2))*?)(\s+\],)/s";
+            
+            if (preg_match($guardsPattern, $authConfigContent, $matches)) {
+                // Insert before the closing bracket
                 $authConfigContent = str_replace(
                     $matches[0],
-                    $matches[1] . "\n" . $customerGuard . $matches[2],
+                    $matches[1] . $matches[2] . "\n" . $customerGuard . $matches[4],
                     $authConfigContent
                 );
+            } else {
+                // Fallback: find the guards array more simply
+                if (preg_match("/(\s*'guards'\s*=>\s*\[[^\]]*?)(\s+\],)/s", $authConfigContent, $matches)) {
+                    $authConfigContent = str_replace(
+                        $matches[0],
+                        $matches[1] . "\n" . $customerGuard . $matches[2],
+                        $authConfigContent
+                    );
+                } else {
+                    $this->warn('⚠️  Could not find guards array in config/auth.php. Please add manually.');
+                    $this->displayGuardConfigurationInstructions($customerModel);
+                    return;
+                }
             }
         }
         
-        // Write updated config
-        File::put($authConfigPath, $authConfigContent);
-        $this->info('✅ Configured customer guard in config/auth.php');
+        // Only write if content changed
+        if ($authConfigContent !== $originalContent) {
+            File::put($authConfigPath, $authConfigContent);
+            $this->info('✅ Configured customer guard in config/auth.php');
+        } else {
+            $this->warn('⚠️  Could not automatically configure customer guard. Please add manually.');
+            $this->displayGuardConfigurationInstructions($customerModel);
+        }
+    }
+
+    /**
+     * Ensure customer guard is configured in auth.php
+     */
+    protected function ensureCustomerGuardConfigured(): void
+    {
+        $authConfigPath = config_path('auth.php');
+        
+        if (!File::exists($authConfigPath)) {
+            return; // Will be handled by configureCustomerGuard if needed
+        }
+
+        $authConfigContent = File::get($authConfigPath);
+        
+        // Check if customer guard exists
+        $hasCustomerGuard = (strpos($authConfigContent, "'customer' => [") !== false || 
+                            strpos($authConfigContent, '"customer" => [') !== false) &&
+                           (strpos($authConfigContent, "'customers' => [") !== false || 
+                            strpos($authConfigContent, '"customers" => [') !== false);
+        
+        if (!$hasCustomerGuard) {
+            // Get customer model from config
+            $customerModel = config('inertia-resource.customer_model');
+            
+            if (!$customerModel) {
+                // Try to get default
+                $customerModel = 'App\\Models\\Customer';
+            }
+            
+            // If it's a class constant, extract the class name
+            if (is_string($customerModel) && strpos($customerModel, '::class') === false) {
+                // It's already a class name string
+            } elseif (is_string($customerModel)) {
+                // Remove ::class if present
+                $customerModel = str_replace('::class', '', $customerModel);
+            } else {
+                // It might be a class constant value, try to get the class name
+                $customerModel = 'App\\Models\\Customer';
+            }
+            
+            $this->info('🔧 Detected customers enabled but guard missing. Configuring customer guard...');
+            $this->configureCustomerGuard($customerModel);
+        }
+    }
+
+    /**
+     * Display manual guard configuration instructions
+     */
+    protected function displayGuardConfigurationInstructions(string $customerModel): void
+    {
+        $this->newLine();
+        $this->comment('Please add the following to your config/auth.php file:');
+        $this->newLine();
+        $this->line('In the "guards" array, add:');
+        $this->line("        'customer' => [");
+        $this->line("            'driver' => 'session',");
+        $this->line("            'provider' => 'customers',");
+        $this->line("        ],");
+        $this->newLine();
+        $this->line('In the "providers" array, add:');
+        $this->line("        'customers' => [");
+        $this->line("            'driver' => 'eloquent',");
+        $this->line("            'model' => {$customerModel}::class,");
+        $this->line("        ],");
+        $this->newLine();
     }
 
     /**
@@ -797,6 +911,9 @@ CSS;
         if (!$useCustomers) {
             return;
         }
+
+        // Check if customer guard is configured, if not, configure it
+        $this->ensureCustomerGuardConfigured();
 
         $routesPath = base_path('routes');
         $customerRoutesFile = "{$routesPath}/customer.php";
