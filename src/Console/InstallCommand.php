@@ -303,6 +303,9 @@ class InstallCommand extends Command
                     ]);
                     $this->newLine();
                 }
+                
+                // Configure customer guard in auth.php
+                $this->configureCustomerGuard($customerModel);
             }
 
             File::put($configPath, $configContent);
@@ -315,6 +318,68 @@ class InstallCommand extends Command
         } else {
             $this->warn('⚠️  Could not update config/inertia-resource.php. Please set use_customers manually.');
         }
+    }
+
+    /**
+     * Configure customer guard in auth.php
+     */
+    protected function configureCustomerGuard(string $customerModel): void
+    {
+        $authConfigPath = config_path('auth.php');
+        
+        if (!File::exists($authConfigPath)) {
+            $this->warn('⚠️  Could not find config/auth.php file. Please configure customer guard manually.');
+            return;
+        }
+
+        $authConfigContent = File::get($authConfigPath);
+        
+        // Check if customer guard already exists
+        if (strpos($authConfigContent, "'customer' => [") !== false && 
+            strpos($authConfigContent, "'customers' => [") !== false) {
+            $this->comment('⚠️  Customer guard already configured in config/auth.php');
+            return;
+        }
+        
+        // Add customer provider to providers array (before the closing bracket)
+        if (strpos($authConfigContent, "'customers' => [") === false) {
+            // Find the last provider entry and add after it
+            $customersProvider = "        'customers' => [\n";
+            $customersProvider .= "            'driver' => 'eloquent',\n";
+            $customersProvider .= "            'model' => {$customerModel}::class,\n";
+            $customersProvider .= "        ],\n";
+            
+            // Find the providers array closing bracket
+            if (preg_match("/('providers'\s*=>\s*\[[^\]]*)(\s+\],)/s", $authConfigContent, $matches)) {
+                $authConfigContent = str_replace(
+                    $matches[0],
+                    $matches[1] . "\n" . $customersProvider . $matches[2],
+                    $authConfigContent
+                );
+            }
+        }
+        
+        // Add customer guard to guards array (before the closing bracket)
+        if (strpos($authConfigContent, "'customer' => [") === false) {
+            // Find the last guard entry and add after it
+            $customerGuard = "        'customer' => [\n";
+            $customerGuard .= "            'driver' => 'session',\n";
+            $customerGuard .= "            'provider' => 'customers',\n";
+            $customerGuard .= "        ],\n";
+            
+            // Find the guards array closing bracket
+            if (preg_match("/('guards'\s*=>\s*\[[^\]]*)(\s+\],)/s", $authConfigContent, $matches)) {
+                $authConfigContent = str_replace(
+                    $matches[0],
+                    $matches[1] . "\n" . $customerGuard . $matches[2],
+                    $authConfigContent
+                );
+            }
+        }
+        
+        // Write updated config
+        File::put($authConfigPath, $authConfigContent);
+        $this->info('✅ Configured customer guard in config/auth.php');
     }
 
     /**
