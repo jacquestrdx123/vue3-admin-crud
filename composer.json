@@ -1,6 +1,6 @@
 {
     "name": "jacquestrdx123/vue3-admin-crud",
-    "version": "2.4.26",
+    "version": "2.4.27",
     "description": "A Filament-like resource system for Inertia.js applications. Provides complete CRUD interface system with tables, forms, filters, actions, and more.",
     "type": "library",
     "keywords": [

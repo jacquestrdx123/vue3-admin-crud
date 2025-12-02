@@ -338,19 +338,34 @@ class InstallCommand extends Command
         
         // First, remove any incorrectly nested customer guard/provider entries
         // Use line-by-line parsing to handle nested brackets correctly
+        // In Laravel config: top level = 4 spaces, nested inside guard/provider = 8 spaces
         $lines = explode("\n", $authConfigContent);
         $cleanedLines = [];
         $skipping = false;
         $skipIndentLevel = null;
         $braceDepth = 0;
+        $insideGuardsOrProviders = false;
         
         for ($i = 0; $i < count($lines); $i++) {
             $line = $lines[$i];
             $lineIndent = strlen($line) - strlen(ltrim($line));
             
-            // Check if this line starts a nested customer guard/provider (12+ spaces = nested inside 'web'/'users')
-            if (!$skipping && $lineIndent >= 12 && (preg_match("/^\s+['\"]customer['\"]?\s*=>\s*\[/", $line) || 
-                                                    preg_match("/^\s+['\"]customers['\"]?\s*=>\s*\[/", $line))) {
+            // Track if we're inside 'guards' or 'providers' arrays
+            if (preg_match("/^\s*['\"]guards['\"]?\s*=>\s*\[/", $line) || 
+                preg_match("/^\s*['\"]providers['\"]?\s*=>\s*\[/", $line)) {
+                $insideGuardsOrProviders = true;
+            }
+            
+            // Check if we've exited the guards/providers array (closing bracket at base indent)
+            if ($insideGuardsOrProviders && preg_match("/^\s+\],/", $line) && $lineIndent <= 4) {
+                $insideGuardsOrProviders = false;
+            }
+            
+            // Check if this line starts a nested customer guard/provider
+            // Should be at 4 spaces (top level), but if it's at 8+ spaces inside guards/providers, it's nested incorrectly
+            if (!$skipping && $insideGuardsOrProviders && $lineIndent >= 8 && 
+                (preg_match("/^\s+['\"]customer['\"]?\s*=>\s*\[/", $line) || 
+                 preg_match("/^\s+['\"]customers['\"]?\s*=>\s*\[/", $line))) {
                 // Start skipping - track the indent level we need to get back to
                 $skipping = true;
                 $skipIndentLevel = $lineIndent;
