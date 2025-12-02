@@ -752,10 +752,10 @@ CSS;
 
         $routesContent = File::get($routesFile);
         
-        // Check if customer routes already exist
-        if (strpos($routesContent, "Route::prefix('customer')") !== false || 
-            strpos($routesContent, "Route::get('/customer/login'") !== false ||
-            strpos($routesContent, "->name('customer.login')") !== false) {
+        // Check if customer routes already exist (check for root level routes, not /customer prefix)
+        if (strpos($routesContent, "Route::get('/login'") !== false && 
+            strpos($routesContent, "Auth/CustomerLogin") !== false ||
+            strpos($routesContent, "auth:customer") !== false) {
             $this->warn('⚠️  Customer routes already exist in routes file. Skipping route generation.');
             return;
         }
@@ -764,38 +764,44 @@ CSS;
         $hasInertiaImport = strpos($routesContent, "use Inertia\\Inertia;") !== false || 
                             strpos($routesContent, "use Inertia\\Inertia as Inertia;") !== false;
 
-        // Prepare customer routes
-        $customerRoutes = "\n\n// Customer routes\n";
-        $customerRoutes .= "Route::prefix('customer')->name('customer.')->group(function () {\n";
-        $customerRoutes .= "    // Login routes (guest middleware)\n";
-        $customerRoutes .= "    Route::middleware(['guest'])->group(function () {\n";
-        $customerRoutes .= "        Route::get('/login', function () {\n";
-        $customerRoutes .= "            return \\Inertia\\Inertia::render('Auth/CustomerLogin');\n";
-        $customerRoutes .= "        })->name('login');\n";
-        $customerRoutes .= "        \n";
-        $customerRoutes .= "        Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {\n";
-        $customerRoutes .= "            \$credentials = \$request->validate([\n";
-        $customerRoutes .= "                'email' => ['required', 'email'],\n";
-        $customerRoutes .= "                'password' => ['required'],\n";
-        $customerRoutes .= "            ]);\n";
-        $customerRoutes .= "            \n";
-        $customerRoutes .= "            if (\\Illuminate\\Support\\Facades\\Auth::guard('customer')->attempt(\$credentials, \$request->boolean('remember'))) {\n";
-        $customerRoutes .= "                \$request->session()->regenerate();\n";
-        $customerRoutes .= "                return redirect()->intended('/customer');\n";
-        $customerRoutes .= "            }\n";
-        $customerRoutes .= "            \n";
-        $customerRoutes .= "            return back()->withErrors([\n";
-        $customerRoutes .= "                'email' => 'The provided credentials do not match our records.',\n";
-        $customerRoutes .= "            ])->onlyInput('email');\n";
-        $customerRoutes .= "        })->name('login');\n";
-        $customerRoutes .= "    });\n";
+        // Prepare customer routes at root level (not under /customer prefix)
+        // These routes use auth:customer guard and redirect to /login if not authenticated
+        $customerRoutes = "\n\n// Customer routes (root level, uses customer guard)\n";
+        $customerRoutes .= "// Customer login routes (guest middleware - redirects to /login if already authenticated)\n";
+        $customerRoutes .= "Route::middleware(['guest:customer'])->group(function () {\n";
+        $customerRoutes .= "    Route::get('/login', function () {\n";
+        $customerRoutes .= "        return \\Inertia\\Inertia::render('Auth/CustomerLogin');\n";
+        $customerRoutes .= "    })->name('customer.login');\n";
         $customerRoutes .= "    \n";
-        $customerRoutes .= "    // Protected customer routes (auth:customer guard)\n";
-        $customerRoutes .= "    Route::middleware(['auth:customer'])->group(function () {\n";
-        $customerRoutes .= "        Route::get('/', function () {\n";
-        $customerRoutes .= "            return \\Inertia\\Inertia::render('Dashboard');\n";
-        $customerRoutes .= "        })->name('dashboard');\n";
-        $customerRoutes .= "    });\n";
+        $customerRoutes .= "    Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {\n";
+        $customerRoutes .= "        \$credentials = \$request->validate([\n";
+        $customerRoutes .= "            'email' => ['required', 'email'],\n";
+        $customerRoutes .= "            'password' => ['required'],\n";
+        $customerRoutes .= "        ]);\n";
+        $customerRoutes .= "        \n";
+        $customerRoutes .= "        if (\\Illuminate\\Support\\Facades\\Auth::guard('customer')->attempt(\$credentials, \$request->boolean('remember'))) {\n";
+        $customerRoutes .= "            \$request->session()->regenerate();\n";
+        $customerRoutes .= "            return redirect()->intended('/');\n";
+        $customerRoutes .= "        }\n";
+        $customerRoutes .= "        \n";
+        $customerRoutes .= "        throw \\Illuminate\\Validation\\ValidationException::withMessages([\n";
+        $customerRoutes .= "            'email' => 'The provided credentials do not match our records.',\n";
+        $customerRoutes .= "        ]);\n";
+        $customerRoutes .= "    })->name('customer.login.post');\n";
+        $customerRoutes .= "});\n";
+        $customerRoutes .= "\n";
+        $customerRoutes .= "// Protected customer routes (auth:customer guard - redirects to /login if not authenticated)\n";
+        $customerRoutes .= "Route::middleware(['auth:customer'])->group(function () {\n";
+        $customerRoutes .= "    Route::get('/', function () {\n";
+        $customerRoutes .= "        return \\Inertia\\Inertia::render('Dashboard');\n";
+        $customerRoutes .= "    })->name('customer.dashboard');\n";
+        $customerRoutes .= "    \n";
+        $customerRoutes .= "    Route::post('/logout', function (\\Illuminate\\Http\\Request \$request) {\n";
+        $customerRoutes .= "        \\Illuminate\\Support\\Facades\\Auth::guard('customer')->logout();\n";
+        $customerRoutes .= "        \$request->session()->invalidate();\n";
+        $customerRoutes .= "        \$request->session()->regenerateToken();\n";
+        $customerRoutes .= "        return redirect()->route('customer.login');\n";
+        $customerRoutes .= "    })->name('customer.logout');\n";
         $customerRoutes .= "});\n";
 
         // Add Inertia import if not present
@@ -833,36 +839,42 @@ CSS;
         $this->newLine();
         $this->line("use Inertia\\Inertia;");
         $this->newLine();
-        $this->line("Route::prefix('customer')->name('customer.')->group(function () {");
-        $this->line("    // Login routes (guest middleware)");
-        $this->line("    Route::middleware(['guest'])->group(function () {");
-        $this->line("        Route::get('/login', function () {");
-        $this->line("            return Inertia::render('Auth/CustomerLogin');");
-        $this->line("        })->name('login');");
-        $this->line("        ");
-        $this->line("        Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {");
-        $this->line("            \$credentials = \$request->validate([");
-        $this->line("                'email' => ['required', 'email'],");
-        $this->line("                'password' => ['required'],");
-        $this->line("            ]);");
-        $this->line("            ");
-        $this->line("            if (\\Illuminate\\Support\\Facades\\Auth::guard('customer')->attempt(\$credentials, \$request->boolean('remember'))) {");
-        $this->line("                \$request->session()->regenerate();");
-        $this->line("                return redirect()->intended('/customer');");
-        $this->line("            }");
-        $this->line("            ");
-        $this->line("            return back()->withErrors([");
-        $this->line("                'email' => 'The provided credentials do not match our records.',");
-        $this->line("            ])->onlyInput('email');");
-        $this->line("        })->name('login');");
-        $this->line("    });");
+        $this->line("// Customer routes (root level, uses customer guard)");
+        $this->line("// Customer login routes (guest middleware - redirects to /login if already authenticated)");
+        $this->line("Route::middleware(['guest:customer'])->group(function () {");
+        $this->line("    Route::get('/login', function () {");
+        $this->line("        return Inertia::render('Auth/CustomerLogin');");
+        $this->line("    })->name('customer.login');");
         $this->line("    ");
-        $this->line("    // Protected customer routes (auth:customer guard)");
-        $this->line("    Route::middleware(['auth:customer'])->group(function () {");
-        $this->line("        Route::get('/', function () {");
-        $this->line("            return Inertia::render('Dashboard');");
-        $this->line("        })->name('dashboard');");
-        $this->line("    });");
+        $this->line("    Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {");
+        $this->line("        \$credentials = \$request->validate([");
+        $this->line("            'email' => ['required', 'email'],");
+        $this->line("            'password' => ['required'],");
+        $this->line("        ]);");
+        $this->line("        ");
+        $this->line("        if (\\Illuminate\\Support\\Facades\\Auth::guard('customer')->attempt(\$credentials, \$request->boolean('remember'))) {");
+        $this->line("            \$request->session()->regenerate();");
+        $this->line("            return redirect()->intended('/');");
+        $this->line("        }");
+        $this->line("        ");
+        $this->line("        throw \\Illuminate\\Validation\\ValidationException::withMessages([");
+        $this->line("            'email' => 'The provided credentials do not match our records.',");
+        $this->line("        ]);");
+        $this->line("    })->name('customer.login.post');");
+        $this->line("});");
+        $this->newLine();
+        $this->line("// Protected customer routes (auth:customer guard - redirects to /login if not authenticated)");
+        $this->line("Route::middleware(['auth:customer'])->group(function () {");
+        $this->line("    Route::get('/', function () {");
+        $this->line("        return Inertia::render('Dashboard');");
+        $this->line("    })->name('customer.dashboard');");
+        $this->line("    ");
+        $this->line("    Route::post('/logout', function (\\Illuminate\\Http\\Request \$request) {");
+        $this->line("        \\Illuminate\\Support\\Facades\\Auth::guard('customer')->logout();");
+        $this->line("        \$request->session()->invalidate();");
+        $this->line("        \$request->session()->regenerateToken();");
+        $this->line("        return redirect()->route('customer.login');");
+        $this->line("    })->name('customer.logout');");
         $this->line("});");
         $this->newLine();
     }
