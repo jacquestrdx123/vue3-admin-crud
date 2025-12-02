@@ -51,6 +51,14 @@
               <MaterialIcon icon="mdi-menu" />
               <span>Menu Items</span>
             </a>
+            <a
+              @click.prevent="openMenuBuilder"
+              href="#"
+              class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+            >
+              <MaterialIcon icon="mdi-drag-horizontal" />
+              <span>Menu Builder</span>
+            </a>
           </div>
 
           <!-- Debug: Keepalive Test Button -->
@@ -79,6 +87,13 @@
         </div>
       </Transition>
     </div>
+
+    <!-- Menu Builder Modal -->
+    <MenuBuilder
+      :show="showMenuBuilder"
+      :menu-groups="menuGroups"
+      @close="showMenuBuilder = false"
+    />
   </div>
 </template>
 
@@ -87,12 +102,14 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
 import MaterialIcon from './MaterialIcon.vue'
 import NotificationDropdown from './NotificationDropdown.vue'
+import MenuBuilder from './MenuBuilder.vue'
 import { useSessionKeepalive } from '@/Composables/useSessionKeepalive.js'
 
 const page = usePage()
 const showMenu = ref(false)
 const menuRef = ref(null)
 const isPingingKeepalive = ref(false)
+const showMenuBuilder = ref(false)
 
 const { pingKeepalive } = useSessionKeepalive()
 
@@ -103,6 +120,10 @@ const currentUser = computed(() => {
 const isDebugMode = computed(() => {
   const env = page?.props?.app_env
   return env === 'local' || env === 'debug' || env === 'development'
+})
+
+const menuGroups = computed(() => {
+  return page?.props?.menuGroups || []
 })
 
 const toggleMenu = () => {
@@ -119,6 +140,11 @@ const goToMenuItems = () => {
   showMenu.value = false
   const url = route('vue.menu-groups.index')
   if (url) router.visit(url)
+}
+
+const openMenuBuilder = () => {
+  showMenu.value = false
+  showMenuBuilder.value = true
 }
 
 const goToCustomers = () => {

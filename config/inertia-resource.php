@@ -48,6 +48,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Menu Models (Optional)
+    |--------------------------------------------------------------------------
+    |
+    | If you want to use the database-driven menu system, specify the model
+    | classes here. These models will be used by MenuBuilder to build the
+    | navigation menu from the database.
+    |
+    */
+    'menu_group_model' => \App\Models\MenuGroup::class,
+    'menu_item_model' => \App\Models\MenuItem::class,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu Permission Behavior
+    |--------------------------------------------------------------------------
+    |
+    | Controls how menu items without a permission_name are handled:
+    | - true: Items without permission_name are shown to all users (default)
+    | - false: Items without permission_name are hidden from all users
+    |
+    */
+    'menu_show_items_without_permission' => true,
+
+    /*
+    |--------------------------------------------------------------------------
     | Resource Paths
     |--------------------------------------------------------------------------
     |

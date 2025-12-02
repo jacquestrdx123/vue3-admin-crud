@@ -43,6 +43,7 @@ class InertiaResourceServiceProvider extends ServiceProvider
                 \InertiaResource\Console\CreateInertiaResourceCommand::class,
                 \InertiaResource\Console\CreateUserModelCommand::class,
                 \InertiaResource\Console\PublishAssetsCommand::class,
+                \InertiaResource\Console\CreateMenuModelsCommand::class,
             ]);
         }
 
@@ -54,6 +55,8 @@ class InertiaResourceServiceProvider extends ServiceProvider
         // Publish migrations
         $this->publishes([
             __DIR__.'/../database/migrations/create_user_column_preferences_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_user_column_preferences_table.php'),
+            __DIR__.'/../database/migrations/create_menu_groups_table.php.stub' => database_path('migrations/'.date('Y_m_d_His', strtotime('+1 second')).'_create_menu_groups_table.php'),
+            __DIR__.'/../database/migrations/create_menu_items_table.php.stub' => database_path('migrations/'.date('Y_m_d_His', strtotime('+2 seconds')).'_create_menu_items_table.php'),
         ], 'inertia-resource-migrations');
 
         // Publish Vue components, pages, and composables
@@ -90,10 +93,18 @@ class InertiaResourceServiceProvider extends ServiceProvider
             __DIR__.'/../stubs/Components/Dashboard/StatCard.vue.stub' => resource_path('js/Components/Dashboard/StatCard.vue'),
         ], 'inertia-resource-layouts');
 
+        // Publish menu models
+        $this->publishes([
+            __DIR__.'/../stubs/Models/MenuGroup.php.stub' => app_path('Models/MenuGroup.php'),
+            __DIR__.'/../stubs/Models/MenuItem.php.stub' => app_path('Models/MenuItem.php'),
+        ], 'inertia-resource-menu-models');
+
         // Publish all assets (config, migrations, components) together
         $this->publishes([
             __DIR__.'/../config/inertia-resource.php' => config_path('inertia-resource.php'),
             __DIR__.'/../database/migrations/create_user_column_preferences_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_user_column_preferences_table.php'),
+            __DIR__.'/../database/migrations/create_menu_groups_table.php.stub' => database_path('migrations/'.date('Y_m_d_His', strtotime('+1 second')).'_create_menu_groups_table.php'),
+            __DIR__.'/../database/migrations/create_menu_items_table.php.stub' => database_path('migrations/'.date('Y_m_d_His', strtotime('+2 seconds')).'_create_menu_items_table.php'),
             __DIR__.'/../resources/js' => resource_path('js/vendor/inertia-resource'),
             __DIR__.'/../tailwind.config.js' => base_path('tailwind.config.js'),
             __DIR__.'/../resources/css/app.css' => resource_path('css/vue-admin-panel.css'),
@@ -102,6 +113,8 @@ class InertiaResourceServiceProvider extends ServiceProvider
             __DIR__.'/../stubs/Layouts/DashboardLayout.vue.stub' => resource_path('js/Layouts/DashboardLayout.vue'),
             __DIR__.'/../stubs/Pages/Dashboard.vue.stub' => resource_path('js/Pages/Dashboard.vue'),
             __DIR__.'/../stubs/Components/Dashboard/StatCard.vue.stub' => resource_path('js/Components/Dashboard/StatCard.vue'),
+            __DIR__.'/../stubs/Models/MenuGroup.php.stub' => app_path('Models/MenuGroup.php'),
+            __DIR__.'/../stubs/Models/MenuItem.php.stub' => app_path('Models/MenuItem.php'),
         ], 'inertia-resource');
     }
 
