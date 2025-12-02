@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.32] - 2024-12-XX
+
+### Changed
+
+- Optimized InstallCommand with improved menu system setup
+- Changed User Resource question default to "yes" during installation
+- Added migration existence checks before creating them to prevent duplicates
+- Added question to create Menu Groups and Items during installation
+- Menu system setup now automatically creates models, migrations, routes, and Vue files
+
+### Improved
+
+- Better user feedback during installation process
+- Clearer next steps guidance after menu system creation
+
 ## [2.4.31] - 2024-12-XX
 
 ### Added
