@@ -587,207 +587,88 @@ CSS;
     protected function createAdminRoutes(): void
     {
         $routesPath = base_path('routes');
-        $routesFile = "{$routesPath}/web.php";
+        $adminRoutesFile = "{$routesPath}/admin.php";
+        $webRoutesFile = "{$routesPath}/web.php";
 
-        // Check if routes file exists
-        if (!File::exists($routesFile)) {
+        // Check if web.php exists
+        if (!File::exists($webRoutesFile)) {
             $this->warn('⚠️  Could not find routes/web.php file.');
-            $this->comment('Please add the following routes manually:');
+            $this->comment('Please create routes/web.php and add the following manually:');
             $this->displayAdminRoutes();
             return;
         }
 
-        $routesContent = File::get($routesFile);
+        // Create admin.php route file
+        $adminRoutesContent = "<?php\n\n";
+        $adminRoutesContent .= "use Inertia\\Inertia;\n";
+        $adminRoutesContent .= "use InertiaResource\\Http\\Controllers\\UserColumnPreferenceController;\n\n";
+        $adminRoutesContent .= "// Admin routes\n";
+        $adminRoutesContent .= "Route::prefix('admin')->name('admin.')->group(function () {\n";
+        $adminRoutesContent .= "    // Login routes (guest middleware)\n";
+        $adminRoutesContent .= "    Route::middleware(['guest'])->group(function () {\n";
+        $adminRoutesContent .= "        Route::get('/login', function () {\n";
+        $adminRoutesContent .= "            return Inertia::render('Auth/AdminLogin');\n";
+        $adminRoutesContent .= "        })->name('login');\n";
+        $adminRoutesContent .= "        \n";
+        $adminRoutesContent .= "        Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {\n";
+        $adminRoutesContent .= "            \$credentials = \$request->validate([\n";
+        $adminRoutesContent .= "                'email' => ['required', 'email'],\n";
+        $adminRoutesContent .= "                'password' => ['required'],\n";
+        $adminRoutesContent .= "            ]);\n";
+        $adminRoutesContent .= "            \n";
+        $adminRoutesContent .= "            if (\\Illuminate\\Support\\Facades\\Auth::attempt(\$credentials, \$request->boolean('remember'))) {\n";
+        $adminRoutesContent .= "                \$request->session()->regenerate();\n";
+        $adminRoutesContent .= "                return redirect()->intended(route('admin.dashboard'));\n";
+        $adminRoutesContent .= "            }\n";
+        $adminRoutesContent .= "            \n";
+        $adminRoutesContent .= "            throw \\Illuminate\\Validation\\ValidationException::withMessages([\n";
+        $adminRoutesContent .= "                'email' => 'The provided credentials do not match our records.',\n";
+        $adminRoutesContent .= "            ]);\n";
+        $adminRoutesContent .= "        })->name('login');\n";
+        $adminRoutesContent .= "    });\n";
+        $adminRoutesContent .= "    \n";
+        $adminRoutesContent .= "    // Protected admin routes (auth middleware - uses default web guard)\n";
+        $adminRoutesContent .= "    Route::middleware(['auth'])->group(function () {\n";
+        $adminRoutesContent .= "        Route::get('/', function () {\n";
+        $adminRoutesContent .= "            return Inertia::render('Dashboard');\n";
+        $adminRoutesContent .= "        })->name('dashboard');\n";
+        $adminRoutesContent .= "        \n";
+        $adminRoutesContent .= "        Route::post('/logout', function (\\Illuminate\\Http\\Request \$request) {\n";
+        $adminRoutesContent .= "            \\Illuminate\\Support\\Facades\\Auth::logout();\n";
+        $adminRoutesContent .= "            \$request->session()->invalidate();\n";
+        $adminRoutesContent .= "            \$request->session()->regenerateToken();\n";
+        $adminRoutesContent .= "            return redirect()->route('admin.login');\n";
+        $adminRoutesContent .= "        })->name('logout');\n";
+        $adminRoutesContent .= "    });\n";
+        $adminRoutesContent .= "});\n\n";
+        $adminRoutesContent .= "// API routes for column preferences\n";
+        $adminRoutesContent .= "Route::prefix('api')->middleware(['auth', 'web'])->group(function () {\n";
+        $adminRoutesContent .= "    Route::get('/user-column-preferences/{resourceSlug}', [UserColumnPreferenceController::class, 'show']);\n";
+        $adminRoutesContent .= "    Route::post('/user-column-preferences/{resourceSlug}', [UserColumnPreferenceController::class, 'store']);\n";
+        $adminRoutesContent .= "    Route::delete('/user-column-preferences/{resourceSlug}', [UserColumnPreferenceController::class, 'destroy']);\n";
+        $adminRoutesContent .= "});\n";
+
+        // Write admin.php file
+        File::put($adminRoutesFile, $adminRoutesContent);
+        $this->info('✅ Created routes/admin.php');
+
+        // Update web.php to include admin.php
+        $webRoutesContent = File::get($webRoutesFile);
         
-        // Check if admin routes already exist
-        $routesExist = strpos($routesContent, "Route::prefix('admin')") !== false || 
-            strpos($routesContent, "Route::get('/admin/login'") !== false ||
-                       strpos($routesContent, "->name('admin.login')") !== false;
-        
-        // Check if routes need to be updated (old guard code or missing logout route)
-        $needsUpdate = false;
-        $needsLogoutRoute = false;
-        $needsApiRoutes = false;
-        
-        if ($routesExist) {
-            // Check for old guard code that needs fixing
-            if (strpos($routesContent, "Auth::guard('user')") !== false || 
-                strpos($routesContent, "auth:user") !== false) {
-                $needsUpdate = true;
-                $this->warn('⚠️  Admin routes exist but use old guard code. Updating...');
-                
-                // Fix Auth::guard('user') to Auth::attempt()
-                $routesContent = preg_replace(
-                    "/\\\Illuminate\\\Support\\\Facades\\\Auth::guard\(['\"]user['\"]\)->attempt/",
-                    "\\Illuminate\\Support\\Facades\\Auth::attempt",
-                    $routesContent
-                );
-                
-                // Fix auth:user middleware to auth
-                $routesContent = preg_replace(
-                    "/middleware\(\[['\"]auth:user['\"]\]\)/",
-                    "middleware(['auth'])",
-                    $routesContent
-                );
-                
-                // Fix redirect to use named route
-                $routesContent = preg_replace(
-                    "/redirect\(\)->intended\(['\"]\/admin['\"]\)/",
-                    "redirect()->intended(route('admin.dashboard'))",
-                    $routesContent
-                );
-                
-                // Fix error handling to use ValidationException for better Inertia support
-                $routesContent = preg_replace(
-                    "/return back\(\)->withErrors\(\[[\s\S]*?\]\)->onlyInput\(['\"]email['\"]\);/",
-                    "throw \\Illuminate\\Validation\\ValidationException::withMessages([\n                'email' => 'The provided credentials do not match our records.',\n            ]);",
-                    $routesContent
-                );
-                
-                // Update comment if it exists
-                $routesContent = preg_replace(
-                    "/\/\/ Protected admin routes \(auth:user guard\)/",
-                    "// Protected admin routes (auth middleware - uses default web guard)",
-                    $routesContent
-                );
-            }
+        // Check if admin.php is already included
+        if (strpos($webRoutesContent, "require __DIR__.'/admin.php';") === false && 
+            strpos($webRoutesContent, "require __DIR__ . '/admin.php';") === false &&
+            strpos($webRoutesContent, "require __DIR__ . \"/admin.php\";") === false) {
             
-            // Check if logout route exists
-            if (strpos($routesContent, "->name('admin.logout')") === false && 
-                strpos($routesContent, "Route::post('/logout'") === false) {
-                $needsLogoutRoute = true;
-                $needsUpdate = true;
-            }
+            // Add require statement at the end of web.php
+            $webRoutesContent .= "\n\n// Admin routes\n";
+            $webRoutesContent .= "require __DIR__.'/admin.php';\n";
             
-            // Check if API routes exist
-            if (strpos($routesContent, 'UserColumnPreferenceController') === false) {
-                $needsApiRoutes = true;
-                $needsUpdate = true;
-            }
-            
-            if ($needsUpdate) {
-                // Add logout route if missing
-                if ($needsLogoutRoute) {
-                    // Find the dashboard route and add logout after it
-                    if (preg_match("/(Route::get\('\/',[^}]+\)->name\('dashboard'\);)/", $routesContent, $matches)) {
-                        $logoutRoute = "\n        Route::post('/logout', function (\\Illuminate\\Http\\Request \$request) {\n";
-                        $logoutRoute .= "            \\Illuminate\\Support\\Facades\\Auth::logout();\n";
-                        $logoutRoute .= "            \$request->session()->invalidate();\n";
-                        $logoutRoute .= "            \$request->session()->regenerateToken();\n";
-                        $logoutRoute .= "            return redirect()->route('admin.login');\n";
-                        $logoutRoute .= "        })->name('logout');\n";
-                        $routesContent = preg_replace(
-                            "/(Route::get\('\/',[^}]+\)->name\('dashboard'\);)/",
-                            "$1" . $logoutRoute,
-                            $routesContent
-                        );
-                    }
-                }
-                
-                // Add API routes if missing
-                if ($needsApiRoutes) {
-                    $apiRoutes = "\n\n// API routes for column preferences\n";
-                    $apiRoutes .= "Route::prefix('api')->middleware(['auth', 'web'])->group(function () {\n";
-                    $apiRoutes .= "    Route::get('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'show']);\n";
-                    $apiRoutes .= "    Route::post('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'store']);\n";
-                    $apiRoutes .= "    Route::delete('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'destroy']);\n";
-                    $apiRoutes .= "});\n";
-                    $routesContent .= $apiRoutes;
-                }
-                
-                File::put($routesFile, $routesContent);
-                if ($needsLogoutRoute || $needsApiRoutes) {
-                    $this->info('✅ Updated admin routes with logout and API routes.');
-                } else {
-                    $this->info('✅ Updated admin routes to use default auth guard.');
-                }
-                return;
-            } else {
-            $this->warn('⚠️  Admin routes already exist in routes file. Skipping route generation.');
-            return;
-            }
+            File::put($webRoutesFile, $webRoutesContent);
+            $this->info('✅ Added admin routes include to routes/web.php');
+        } else {
+            $this->comment('⚠️  Admin routes already included in routes/web.php');
         }
-
-        // Check if Inertia is imported
-        $hasInertiaImport = strpos($routesContent, "use Inertia\\Inertia;") !== false || 
-                            strpos($routesContent, "use Inertia\\Inertia as Inertia;") !== false;
-
-        // Prepare admin routes
-        $adminRoutes = "\n\n// Admin routes\n";
-        $adminRoutes .= "Route::prefix('admin')->name('admin.')->group(function () {\n";
-        $adminRoutes .= "    // Login routes (guest middleware)\n";
-        $adminRoutes .= "    Route::middleware(['guest'])->group(function () {\n";
-        $adminRoutes .= "        Route::get('/login', function () {\n";
-        $adminRoutes .= "            return \\Inertia\\Inertia::render('Auth/AdminLogin');\n";
-        $adminRoutes .= "        })->name('login');\n";
-        $adminRoutes .= "        \n";
-        $adminRoutes .= "        Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {\n";
-        $adminRoutes .= "            \$credentials = \$request->validate([\n";
-        $adminRoutes .= "                'email' => ['required', 'email'],\n";
-        $adminRoutes .= "                'password' => ['required'],\n";
-        $adminRoutes .= "            ]);\n";
-        $adminRoutes .= "            \n";
-        $adminRoutes .= "            if (\\Illuminate\\Support\\Facades\\Auth::attempt(\$credentials, \$request->boolean('remember'))) {\n";
-        $adminRoutes .= "                \$request->session()->regenerate();\n";
-        $adminRoutes .= "                return redirect()->intended(route('admin.dashboard'));\n";
-        $adminRoutes .= "            }\n";
-        $adminRoutes .= "            \n";
-        $adminRoutes .= "            throw \\Illuminate\\Validation\\ValidationException::withMessages([\n";
-        $adminRoutes .= "                'email' => 'The provided credentials do not match our records.',\n";
-        $adminRoutes .= "            ]);\n";
-        $adminRoutes .= "        })->name('login');\n";
-        $adminRoutes .= "    });\n";
-        $adminRoutes .= "    \n";
-        $adminRoutes .= "    // Protected admin routes (auth middleware - uses default web guard)\n";
-        $adminRoutes .= "    Route::middleware(['auth'])->group(function () {\n";
-        $adminRoutes .= "        Route::get('/', function () {\n";
-        $adminRoutes .= "            return \\Inertia\\Inertia::render('Dashboard');\n";
-        $adminRoutes .= "        })->name('dashboard');\n";
-        $adminRoutes .= "        \n";
-        $adminRoutes .= "        Route::post('/logout', function (\\Illuminate\\Http\\Request \$request) {\n";
-        $adminRoutes .= "            \\Illuminate\\Support\\Facades\\Auth::logout();\n";
-        $adminRoutes .= "            \$request->session()->invalidate();\n";
-        $adminRoutes .= "            \$request->session()->regenerateToken();\n";
-        $adminRoutes .= "            return redirect()->route('admin.login');\n";
-        $adminRoutes .= "        })->name('logout');\n";
-        $adminRoutes .= "    });\n";
-        $adminRoutes .= "});\n";
-
-        // Add Inertia import if not present
-        if (!$hasInertiaImport) {
-            // Find the last use statement or add after <?php
-            if (preg_match('/^<\?php\s*\n/', $routesContent)) {
-                $routesContent = preg_replace(
-                    '/^(<\?php\s*\n)/',
-                    "$1use Inertia\\Inertia;\n",
-                    $routesContent
-                );
-            } else {
-                // Add after first line
-                $routesContent = preg_replace(
-                    '/^(<\?php[^\n]*\n)/',
-                    "$1use Inertia\\Inertia;\n",
-                    $routesContent
-                );
-            }
-        }
-
-        // Append admin routes to file
-        $routesContent .= $adminRoutes;
-        
-        // Add API routes for column preferences if they don't exist
-        if (strpos($routesContent, 'UserColumnPreferenceController') === false) {
-            $apiRoutes = "\n\n// API routes for column preferences\n";
-            $apiRoutes .= "Route::prefix('api')->middleware(['auth', 'web'])->group(function () {\n";
-            $apiRoutes .= "    Route::get('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'show']);\n";
-            $apiRoutes .= "    Route::post('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'store']);\n";
-            $apiRoutes .= "    Route::delete('/user-column-preferences/{resourceSlug}', [\\InertiaResource\\Http\\Controllers\\UserColumnPreferenceController::class, 'destroy']);\n";
-            $apiRoutes .= "});\n";
-            $routesContent .= $apiRoutes;
-        }
-        
-        File::put($routesFile, $routesContent);
-        $this->info('✅ Added admin routes to routes/web.php');
     }
 
     /**
@@ -853,93 +734,78 @@ CSS;
         }
 
         $routesPath = base_path('routes');
-        $routesFile = "{$routesPath}/web.php";
+        $customerRoutesFile = "{$routesPath}/customer.php";
+        $webRoutesFile = "{$routesPath}/web.php";
 
-        // Check if routes file exists
-        if (!File::exists($routesFile)) {
+        // Check if web.php exists
+        if (!File::exists($webRoutesFile)) {
             $this->warn('⚠️  Could not find routes/web.php file.');
-            $this->comment('Please add the following routes manually:');
+            $this->comment('Please create routes/web.php and add the following manually:');
             $this->displayCustomerRoutes();
             return;
         }
 
-        $routesContent = File::get($routesFile);
+        // Create customer.php route file
+        $customerRoutesContent = "<?php\n\n";
+        $customerRoutesContent .= "use Inertia\\Inertia;\n\n";
+        $customerRoutesContent .= "// Customer routes (root level, uses customer guard)\n";
+        $customerRoutesContent .= "// Customer login routes (guest middleware - redirects to /login if already authenticated)\n";
+        $customerRoutesContent .= "Route::middleware(['guest:customer'])->group(function () {\n";
+        $customerRoutesContent .= "    Route::get('/login', function () {\n";
+        $customerRoutesContent .= "        return Inertia::render('Auth/CustomerLogin');\n";
+        $customerRoutesContent .= "    })->name('customer.login');\n";
+        $customerRoutesContent .= "    \n";
+        $customerRoutesContent .= "    Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {\n";
+        $customerRoutesContent .= "        \$credentials = \$request->validate([\n";
+        $customerRoutesContent .= "            'email' => ['required', 'email'],\n";
+        $customerRoutesContent .= "            'password' => ['required'],\n";
+        $customerRoutesContent .= "        ]);\n";
+        $customerRoutesContent .= "        \n";
+        $customerRoutesContent .= "        if (\\Illuminate\\Support\\Facades\\Auth::guard('customer')->attempt(\$credentials, \$request->boolean('remember'))) {\n";
+        $customerRoutesContent .= "            \$request->session()->regenerate();\n";
+        $customerRoutesContent .= "            return redirect()->intended('/');\n";
+        $customerRoutesContent .= "        }\n";
+        $customerRoutesContent .= "        \n";
+        $customerRoutesContent .= "        throw \\Illuminate\\Validation\\ValidationException::withMessages([\n";
+        $customerRoutesContent .= "            'email' => 'The provided credentials do not match our records.',\n";
+        $customerRoutesContent .= "        ]);\n";
+        $customerRoutesContent .= "    })->name('customer.login.post');\n";
+        $customerRoutesContent .= "});\n\n";
+        $customerRoutesContent .= "// Protected customer routes (auth:customer guard - redirects to /login if not authenticated)\n";
+        $customerRoutesContent .= "Route::middleware(['auth:customer'])->group(function () {\n";
+        $customerRoutesContent .= "    Route::get('/', function () {\n";
+        $customerRoutesContent .= "        return Inertia::render('Dashboard');\n";
+        $customerRoutesContent .= "    })->name('customer.dashboard');\n";
+        $customerRoutesContent .= "    \n";
+        $customerRoutesContent .= "    Route::post('/logout', function (\\Illuminate\\Http\\Request \$request) {\n";
+        $customerRoutesContent .= "        \\Illuminate\\Support\\Facades\\Auth::guard('customer')->logout();\n";
+        $customerRoutesContent .= "        \$request->session()->invalidate();\n";
+        $customerRoutesContent .= "        \$request->session()->regenerateToken();\n";
+        $customerRoutesContent .= "        return redirect()->route('customer.login');\n";
+        $customerRoutesContent .= "    })->name('customer.logout');\n";
+        $customerRoutesContent .= "});\n";
+
+        // Write customer.php file
+        File::put($customerRoutesFile, $customerRoutesContent);
+        $this->info('✅ Created routes/customer.php');
+
+        // Update web.php to include customer.php
+        $webRoutesContent = File::get($webRoutesFile);
         
-        // Check if customer routes already exist (check for root level routes, not /customer prefix)
-        if (strpos($routesContent, "Route::get('/login'") !== false && 
-            strpos($routesContent, "Auth/CustomerLogin") !== false ||
-            strpos($routesContent, "auth:customer") !== false) {
-            $this->warn('⚠️  Customer routes already exist in routes file. Skipping route generation.');
-            return;
+        // Check if customer.php is already included
+        if (strpos($webRoutesContent, "require __DIR__.'/customer.php';") === false && 
+            strpos($webRoutesContent, "require __DIR__ . '/customer.php';") === false &&
+            strpos($webRoutesContent, "require __DIR__ . \"/customer.php\";") === false) {
+            
+            // Add require statement at the end of web.php
+            $webRoutesContent .= "\n\n// Customer routes\n";
+            $webRoutesContent .= "require __DIR__.'/customer.php';\n";
+            
+            File::put($webRoutesFile, $webRoutesContent);
+            $this->info('✅ Added customer routes include to routes/web.php');
+        } else {
+            $this->comment('⚠️  Customer routes already included in routes/web.php');
         }
-
-        // Check if Inertia is imported
-        $hasInertiaImport = strpos($routesContent, "use Inertia\\Inertia;") !== false || 
-                            strpos($routesContent, "use Inertia\\Inertia as Inertia;") !== false;
-
-        // Prepare customer routes at root level (not under /customer prefix)
-        // These routes use auth:customer guard and redirect to /login if not authenticated
-        $customerRoutes = "\n\n// Customer routes (root level, uses customer guard)\n";
-        $customerRoutes .= "// Customer login routes (guest middleware - redirects to /login if already authenticated)\n";
-        $customerRoutes .= "Route::middleware(['guest:customer'])->group(function () {\n";
-        $customerRoutes .= "    Route::get('/login', function () {\n";
-        $customerRoutes .= "        return \\Inertia\\Inertia::render('Auth/CustomerLogin');\n";
-        $customerRoutes .= "    })->name('customer.login');\n";
-        $customerRoutes .= "    \n";
-        $customerRoutes .= "    Route::post('/login', function (\\Illuminate\\Http\\Request \$request) {\n";
-        $customerRoutes .= "        \$credentials = \$request->validate([\n";
-        $customerRoutes .= "            'email' => ['required', 'email'],\n";
-        $customerRoutes .= "            'password' => ['required'],\n";
-        $customerRoutes .= "        ]);\n";
-        $customerRoutes .= "        \n";
-        $customerRoutes .= "        if (\\Illuminate\\Support\\Facades\\Auth::guard('customer')->attempt(\$credentials, \$request->boolean('remember'))) {\n";
-        $customerRoutes .= "            \$request->session()->regenerate();\n";
-        $customerRoutes .= "            return redirect()->intended('/');\n";
-        $customerRoutes .= "        }\n";
-        $customerRoutes .= "        \n";
-        $customerRoutes .= "        throw \\Illuminate\\Validation\\ValidationException::withMessages([\n";
-        $customerRoutes .= "            'email' => 'The provided credentials do not match our records.',\n";
-        $customerRoutes .= "        ]);\n";
-        $customerRoutes .= "    })->name('customer.login.post');\n";
-        $customerRoutes .= "});\n";
-        $customerRoutes .= "\n";
-        $customerRoutes .= "// Protected customer routes (auth:customer guard - redirects to /login if not authenticated)\n";
-        $customerRoutes .= "Route::middleware(['auth:customer'])->group(function () {\n";
-        $customerRoutes .= "    Route::get('/', function () {\n";
-        $customerRoutes .= "        return \\Inertia\\Inertia::render('Dashboard');\n";
-        $customerRoutes .= "    })->name('customer.dashboard');\n";
-        $customerRoutes .= "    \n";
-        $customerRoutes .= "    Route::post('/logout', function (\\Illuminate\\Http\\Request \$request) {\n";
-        $customerRoutes .= "        \\Illuminate\\Support\\Facades\\Auth::guard('customer')->logout();\n";
-        $customerRoutes .= "        \$request->session()->invalidate();\n";
-        $customerRoutes .= "        \$request->session()->regenerateToken();\n";
-        $customerRoutes .= "        return redirect()->route('customer.login');\n";
-        $customerRoutes .= "    })->name('customer.logout');\n";
-        $customerRoutes .= "});\n";
-
-        // Add Inertia import if not present
-        if (!$hasInertiaImport) {
-            // Find the last use statement or add after <?php
-            if (preg_match('/^<\?php\s*\n/', $routesContent)) {
-                $routesContent = preg_replace(
-                    '/^(<\?php\s*\n)/',
-                    "$1use Inertia\\Inertia;\n",
-                    $routesContent
-                );
-            } else {
-                // Add after first line
-                $routesContent = preg_replace(
-                    '/^(<\?php[^\n]*\n)/',
-                    "$1use Inertia\\Inertia;\n",
-                    $routesContent
-                );
-            }
-        }
-
-        // Append customer routes to file
-        $routesContent .= $customerRoutes;
-        File::put($routesFile, $routesContent);
-        $this->info('✅ Added customer routes to routes/web.php');
     }
 
     /**
