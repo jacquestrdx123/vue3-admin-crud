@@ -124,7 +124,7 @@ class InstallCommand extends Command
         $this->newLine();
         
         // Ask if user wants to create the initial User Resource
-        if ($this->confirm('Do you want to create the initial User Resource?', false)) {
+        if ($this->confirm('Do you want to create the initial User Resource?', true)) {
             $this->info('📦 Creating User Resource...');
             $this->newLine();
             
@@ -148,6 +148,14 @@ class InstallCommand extends Command
                     '--all' => true,
                 ]);
             }
+            $this->newLine();
+        }
+
+        // Ask if user wants to create Menu Groups and Items
+        if ($this->confirm('Create Menu Groups and Items?', false)) {
+            $this->info('📦 Creating Menu Groups and Items...');
+            $this->newLine();
+            $this->createMenuSystem();
             $this->newLine();
         }
         
@@ -1720,5 +1728,97 @@ CSS;
         } else {
             $this->warn('⚠️  useFieldVisibility.js.stub not found.');
         }
+    }
+
+    /**
+     * Create menu system (models, migrations, routes, and Vue files)
+     */
+    protected function createMenuSystem(): void
+    {
+        // Step 1: Check if migrations exist before creating them
+        $migrationsPath = database_path('migrations');
+        $menuGroupsMigration = glob($migrationsPath . '/*_create_menu_groups_table.php');
+        $menuItemsMigration = glob($migrationsPath . '/*_create_menu_items_table.php');
+
+        $needsMigrations = empty($menuGroupsMigration) || empty($menuItemsMigration);
+
+        if ($needsMigrations) {
+            // Publish migrations if they don't exist
+            $this->info('📦 Publishing menu migrations...');
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-migrations',
+                '--force' => false,
+            ]);
+            $this->info('✅ Menu migrations published.');
+        } else {
+            $this->comment('ℹ️  Menu migrations already exist. Skipping migration creation.');
+        }
+
+        // Step 2: Create models if they don't exist
+        $menuGroupPath = app_path('Models/MenuGroup.php');
+        $menuItemPath = app_path('Models/MenuItem.php');
+
+        $needsModels = !File::exists($menuGroupPath) || !File::exists($menuItemPath);
+
+        if ($needsModels) {
+            $this->info('📄 Publishing menu models...');
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-menu-models',
+                '--force' => false,
+            ]);
+            $this->info('✅ Menu models published.');
+        } else {
+            $this->comment('ℹ️  Menu models already exist. Skipping model creation.');
+        }
+
+        // Step 3: Create Inertia Resources for MenuGroup and MenuItem
+        // Wait a moment for autoloader to catch up if models were just created
+        if ($needsModels) {
+            // Clear and rebuild autoloader cache
+            if (function_exists('opcache_reset')) {
+                opcache_reset();
+            }
+            // Give autoloader a moment
+            usleep(500000); // 0.5 seconds
+        }
+
+        $this->newLine();
+        $this->info('📦 Creating MenuGroup Resource...');
+        
+        if (class_exists('App\\Models\\MenuGroup')) {
+            $this->call('make:inertia-resource', [
+                'model' => 'App\\Models\\MenuGroup',
+                '--all' => true,
+            ]);
+            $this->info('✅ MenuGroup Resource created.');
+        } else {
+            $this->warn('⚠️  MenuGroup model not found. Please run migrations first: php artisan migrate');
+            $this->comment('   Then run: php artisan make:inertia-resource "App\\Models\\MenuGroup" --all');
+        }
+
+        $this->newLine();
+        $this->info('📦 Creating MenuItem Resource...');
+        
+        if (class_exists('App\\Models\\MenuItem')) {
+            $this->call('make:inertia-resource', [
+                'model' => 'App\\Models\\MenuItem',
+                '--all' => true,
+            ]);
+            $this->info('✅ MenuItem Resource created.');
+        } else {
+            $this->warn('⚠️  MenuItem model not found. Please run migrations first: php artisan migrate');
+            $this->comment('   Then run: php artisan make:inertia-resource "App\\Models\\MenuItem" --all');
+        }
+
+        $this->newLine();
+        $this->info('✅ Menu system setup complete!');
+        $this->newLine();
+        $this->comment('📋 Next steps:');
+        if ($needsMigrations) {
+            $this->comment('   1. Run migrations: php artisan migrate');
+        }
+        $this->comment('   2. Seed your menu data in the database');
+        $this->comment('   3. Use MenuBuilder::build() to share menu data with Inertia');
+        $this->comment('   4. Access menu management at: /vue/menu-groups and /vue/menu-items');
     }
 }
