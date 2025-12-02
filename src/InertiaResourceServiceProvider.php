@@ -33,6 +33,9 @@ class InertiaResourceServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register customer guard if customers are enabled
+        $this->registerCustomerGuard();
+
         // Register commands
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -100,6 +103,70 @@ class InertiaResourceServiceProvider extends ServiceProvider
             __DIR__.'/../stubs/Pages/Dashboard.vue.stub' => resource_path('js/Pages/Dashboard.vue'),
             __DIR__.'/../stubs/Components/Dashboard/StatCard.vue.stub' => resource_path('js/Components/Dashboard/StatCard.vue'),
         ], 'inertia-resource');
+    }
+
+    /**
+     * Register customer guard programmatically
+     */
+    protected function registerCustomerGuard(): void
+    {
+        $useCustomers = config('inertia-resource.use_customers', false);
+        
+        if (!$useCustomers) {
+            return;
+        }
+
+        $customerModel = config('inertia-resource.customer_model');
+        
+        if (!$customerModel) {
+            return;
+        }
+
+        // Handle class constant format
+        if (is_string($customerModel) && strpos($customerModel, '::class') !== false) {
+            $customerModel = str_replace('::class', '', $customerModel);
+        }
+
+        // Ensure the model class exists
+        if (!class_exists($customerModel)) {
+            return;
+        }
+
+        // Register customers provider if not already registered
+        $auth = $this->app->make('auth');
+        
+        $auth->provider('customers', function ($app) use ($customerModel) {
+            return new \Illuminate\Auth\EloquentUserProvider(
+                $app['hash'],
+                $customerModel
+            );
+        });
+
+        // Register customer guard if not already registered
+        // Check if guard exists by trying to resolve it
+        try {
+            $auth->guard('customer');
+        } catch (\InvalidArgumentException $e) {
+            // Guard doesn't exist, register it
+            $auth->extend('customer', function ($app) use ($customerModel, $auth) {
+                $provider = $auth->createUserProvider('customers');
+                
+                if (!$provider) {
+                    // Create the provider if it doesn't exist
+                    $provider = $auth->createUserProvider([
+                        'driver' => 'eloquent',
+                        'model' => $customerModel,
+                    ]);
+                }
+
+                return new \Illuminate\Auth\SessionGuard(
+                    'customer',
+                    $provider,
+                    $app['session.store'],
+                    $app['request']
+                );
+            });
+        }
     }
 }
 

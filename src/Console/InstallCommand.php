@@ -424,6 +424,15 @@ class InstallCommand extends Command
         if ($authConfigContent !== $originalContent) {
             File::put($authConfigPath, $authConfigContent);
             $this->info('✅ Configured customer guard in config/auth.php');
+            
+            // Clear config cache to ensure changes are loaded
+            try {
+                if (\Illuminate\Support\Facades\Artisan::call('config:clear') === 0) {
+                    $this->info('✅ Cleared config cache');
+                }
+            } catch (\Exception $e) {
+                $this->comment('⚠️  Could not clear config cache. Please run: php artisan config:clear');
+            }
         } else {
             $this->warn('⚠️  Could not automatically configure customer guard. Please add manually.');
             $this->displayGuardConfigurationInstructions($customerModel);
