@@ -132,41 +132,39 @@ class InertiaResourceServiceProvider extends ServiceProvider
             return;
         }
 
-        // Register customers provider if not already registered
-        $auth = $this->app->make('auth');
-        
-        $auth->provider('customers', function ($app) use ($customerModel) {
+        // Register customers provider first
+        \Illuminate\Support\Facades\Auth::provider('customers', function ($app) use ($customerModel) {
             return new \Illuminate\Auth\EloquentUserProvider(
                 $app['hash'],
                 $customerModel
             );
         });
 
-        // Register customer guard if not already registered
-        // Check if guard exists by trying to resolve it
-        try {
-            $auth->guard('customer');
-        } catch (\InvalidArgumentException $e) {
-            // Guard doesn't exist, register it
-            $auth->extend('customer', function ($app) use ($customerModel, $auth) {
-                $provider = $auth->createUserProvider('customers');
-                
-                if (!$provider) {
-                    // Create the provider if it doesn't exist
-                    $provider = $auth->createUserProvider([
-                        'driver' => 'eloquent',
-                        'model' => $customerModel,
-                    ]);
-                }
-
-                return new \Illuminate\Auth\SessionGuard(
-                    'customer',
-                    $provider,
-                    $app['session.store'],
-                    $app['request']
+        // Register customer guard with correct signature
+        // Auth::extend() receives: $app, $name, $config
+        \Illuminate\Support\Facades\Auth::extend('customer', function ($app, $name, array $config) use ($customerModel) {
+            // Get the provider from config or use 'customers' as default
+            $providerName = $config['provider'] ?? 'customers';
+            
+            // Create the user provider
+            $provider = \Illuminate\Support\Facades\Auth::createUserProvider($providerName);
+            
+            // If provider doesn't exist, create it with customer model
+            if (!$provider) {
+                $provider = new \Illuminate\Auth\EloquentUserProvider(
+                    $app['hash'],
+                    $customerModel
                 );
-            });
-        }
+            }
+
+            // Return SessionGuard instance
+            return new \Illuminate\Auth\SessionGuard(
+                $name,
+                $provider,
+                $app['session.store'],
+                $app['request']
+            );
+        });
     }
 }
 

@@ -336,14 +336,62 @@ class InstallCommand extends Command
         $authConfigContent = File::get($authConfigPath);
         $originalContent = $authConfigContent;
         
-        // Check if customer guard already exists (check for both single and double quotes)
+        // First, remove any incorrectly nested customer guard/provider entries
+        // Use line-by-line parsing to handle nested brackets correctly
+        $lines = explode("\n", $authConfigContent);
+        $cleanedLines = [];
+        $skipping = false;
+        $skipIndentLevel = null;
+        $braceDepth = 0;
+        
+        for ($i = 0; $i < count($lines); $i++) {
+            $line = $lines[$i];
+            $lineIndent = strlen($line) - strlen(ltrim($line));
+            
+            // Check if this line starts a nested customer guard/provider (12+ spaces = nested inside 'web'/'users')
+            if (!$skipping && $lineIndent >= 12 && (preg_match("/^\s+['\"]customer['\"]?\s*=>\s*\[/", $line) || 
+                                                    preg_match("/^\s+['\"]customers['\"]?\s*=>\s*\[/", $line))) {
+                // Start skipping - track the indent level we need to get back to
+                $skipping = true;
+                $skipIndentLevel = $lineIndent;
+                $braceDepth = 1; // We just opened a bracket
+                continue; // Skip this line
+            }
+            
+            // If we're skipping, track bracket depth
+            if ($skipping) {
+                $braceDepth += substr_count($line, '[') - substr_count($line, ']');
+                
+                // Check if we've closed the nested array (braceDepth is 0 or less, and we're at or above skip indent)
+                if ($braceDepth <= 0 && $lineIndent <= $skipIndentLevel) {
+                    $skipping = false;
+                    $skipIndentLevel = null;
+                    $braceDepth = 0;
+                }
+                continue; // Skip this line
+            }
+            
+            // Normal line - keep it
+            $cleanedLines[] = $line;
+        }
+        
+        $authConfigContent = implode("\n", $cleanedLines);
+        
+        // Check if customer guard already exists at the correct top level (after removing nested ones)
         $hasCustomerGuard = (strpos($authConfigContent, "'customer' => [") !== false || 
                             strpos($authConfigContent, '"customer" => [') !== false) &&
                            (strpos($authConfigContent, "'customers' => [") !== false || 
                             strpos($authConfigContent, '"customers" => [') !== false);
         
         if ($hasCustomerGuard) {
-            $this->comment('⚠️  Customer guard already configured in config/auth.php');
+            // Guard exists and is correctly placed, but we may have removed incorrectly nested ones
+            if ($authConfigContent !== $originalContent) {
+                File::put($authConfigPath, $authConfigContent);
+                $this->info('✅ Fixed incorrectly nested customer guard/provider in config/auth.php');
+                $this->call('config:clear');
+            } else {
+                $this->comment('✅ Customer guard already correctly configured in config/auth.php');
+            }
             return;
         }
         
@@ -357,30 +405,47 @@ class InstallCommand extends Command
             $customersProvider .= "            'model' => {$customerModel}::class,\n";
             $customersProvider .= "        ],\n";
             
-            // Improved regex: match providers array with better handling of nested content
-            // Match from 'providers' => [ to the closing ], that's not inside nested arrays
-            $providersPattern = "/(\s*'providers'\s*=>\s*\[)((?:(?:[^\[\]]++|\[(?2)\])++|(?2))*?)(\s+\],)/s";
+            // Find the providers array - need to find the TOP-LEVEL closing bracket
+            // Look for 'providers' => [ and find the matching closing bracket at the same indentation level
+            $lines = explode("\n", $authConfigContent);
+            $providersStartIndex = null;
+            $providersEndIndex = null;
+            $braceCount = 0;
+            $baseIndent = null;
             
-            if (preg_match($providersPattern, $authConfigContent, $matches)) {
-                // Insert before the closing bracket
-                $authConfigContent = str_replace(
-                    $matches[0],
-                    $matches[1] . $matches[2] . "\n" . $customersProvider . $matches[4],
-                    $authConfigContent
-                );
-            } else {
-                // Fallback: find the providers array more simply
-                if (preg_match("/(\s*'providers'\s*=>\s*\[[^\]]*?)(\s+\],)/s", $authConfigContent, $matches)) {
-                    $authConfigContent = str_replace(
-                        $matches[0],
-                        $matches[1] . "\n" . $customersProvider . $matches[2],
-                        $authConfigContent
-                    );
-                } else {
-                    $this->warn('⚠️  Could not find providers array in config/auth.php. Please add manually.');
-                    $this->displayGuardConfigurationInstructions($customerModel);
-                    return;
+            for ($i = 0; $i < count($lines); $i++) {
+                // Find the providers array start
+                if (preg_match("/^(\s*)'providers'\s*=>\s*\[/", $lines[$i], $matches)) {
+                    $providersStartIndex = $i;
+                    $baseIndent = strlen($matches[1]);
+                    $braceCount = 1;
+                    continue;
                 }
+                
+                if ($providersStartIndex !== null) {
+                    // Count braces to find the closing bracket
+                    $lineIndent = strlen($lines[$i]) - strlen(ltrim($lines[$i]));
+                    $braceCount += substr_count($lines[$i], '[') - substr_count($lines[$i], ']');
+                    
+                    // Check if we've closed the providers array
+                    // Must have braceCount === 0 (all nested arrays closed)
+                    // AND be at the base indent level (same as 'providers' => [)
+                    // AND contain the closing bracket pattern
+                    if ($braceCount === 0 && $lineIndent === $baseIndent && preg_match("/^\s+\],/", $lines[$i])) {
+                        $providersEndIndex = $i;
+                        break;
+                    }
+                }
+            }
+            
+            if ($providersStartIndex !== null && $providersEndIndex !== null) {
+                // Insert before the closing bracket
+                $lines[$providersEndIndex] = $customersProvider . $lines[$providersEndIndex];
+                $authConfigContent = implode("\n", $lines);
+            } else {
+                $this->warn('⚠️  Could not find providers array closing bracket in config/auth.php. Please add manually.');
+                $this->displayGuardConfigurationInstructions($customerModel);
+                return;
             }
         }
         
@@ -394,29 +459,46 @@ class InstallCommand extends Command
             $customerGuard .= "            'provider' => 'customers',\n";
             $customerGuard .= "        ],\n";
             
-            // Improved regex: match guards array with better handling of nested content
-            $guardsPattern = "/(\s*'guards'\s*=>\s*\[)((?:(?:[^\[\]]++|\[(?2)\])++|(?2))*?)(\s+\],)/s";
+            // Find the guards array - need to find the TOP-LEVEL closing bracket
+            $lines = explode("\n", $authConfigContent);
+            $guardsStartIndex = null;
+            $guardsEndIndex = null;
+            $braceCount = 0;
+            $baseIndent = null;
             
-            if (preg_match($guardsPattern, $authConfigContent, $matches)) {
-                // Insert before the closing bracket
-                $authConfigContent = str_replace(
-                    $matches[0],
-                    $matches[1] . $matches[2] . "\n" . $customerGuard . $matches[4],
-                    $authConfigContent
-                );
-            } else {
-                // Fallback: find the guards array more simply
-                if (preg_match("/(\s*'guards'\s*=>\s*\[[^\]]*?)(\s+\],)/s", $authConfigContent, $matches)) {
-                    $authConfigContent = str_replace(
-                        $matches[0],
-                        $matches[1] . "\n" . $customerGuard . $matches[2],
-                        $authConfigContent
-                    );
-                } else {
-                    $this->warn('⚠️  Could not find guards array in config/auth.php. Please add manually.');
-                    $this->displayGuardConfigurationInstructions($customerModel);
-                    return;
+            for ($i = 0; $i < count($lines); $i++) {
+                // Find the guards array start
+                if (preg_match("/^(\s*)'guards'\s*=>\s*\[/", $lines[$i], $matches)) {
+                    $guardsStartIndex = $i;
+                    $baseIndent = strlen($matches[1]);
+                    $braceCount = 1;
+                    continue;
                 }
+                
+                if ($guardsStartIndex !== null) {
+                    // Count braces to find the closing bracket
+                    $lineIndent = strlen($lines[$i]) - strlen(ltrim($lines[$i]));
+                    $braceCount += substr_count($lines[$i], '[') - substr_count($lines[$i], ']');
+                    
+                    // Check if we've closed the guards array
+                    // Must have braceCount === 0 (all nested arrays closed)
+                    // AND be at the base indent level (same as 'guards' => [)
+                    // AND contain the closing bracket pattern
+                    if ($braceCount === 0 && $lineIndent === $baseIndent && preg_match("/^\s+\],/", $lines[$i])) {
+                        $guardsEndIndex = $i;
+                        break;
+                    }
+                }
+            }
+            
+            if ($guardsStartIndex !== null && $guardsEndIndex !== null) {
+                // Insert before the closing bracket
+                $lines[$guardsEndIndex] = $customerGuard . $lines[$guardsEndIndex];
+                $authConfigContent = implode("\n", $lines);
+            } else {
+                $this->warn('⚠️  Could not find guards array closing bracket in config/auth.php. Please add manually.');
+                $this->displayGuardConfigurationInstructions($customerModel);
+                return;
             }
         }
         
@@ -425,6 +507,19 @@ class InstallCommand extends Command
             File::put($authConfigPath, $authConfigContent);
             $this->info('✅ Configured customer guard in config/auth.php');
             
+            // Verify the guard was actually added
+            $updatedContent = File::get($authConfigPath);
+            $guardAdded = (strpos($updatedContent, "'customer' => [") !== false || 
+                          strpos($updatedContent, '"customer" => [') !== false) &&
+                         (strpos($updatedContent, "'customers' => [") !== false || 
+                          strpos($updatedContent, '"customers" => [') !== false);
+            
+            if (!$guardAdded) {
+                $this->warn('⚠️  Guard configuration may not have been added correctly. Please verify config/auth.php');
+                $this->displayGuardConfigurationInstructions($customerModel);
+                return;
+            }
+            
             // Clear config cache to ensure changes are loaded
             try {
                 if (\Illuminate\Support\Facades\Artisan::call('config:clear') === 0) {
@@ -432,6 +527,21 @@ class InstallCommand extends Command
                 }
             } catch (\Exception $e) {
                 $this->comment('⚠️  Could not clear config cache. Please run: php artisan config:clear');
+            }
+            
+            // Verify guard can be resolved (if we can test it)
+            try {
+                // This will only work if the app is bootstrapped
+                if (app()->bound('auth')) {
+                    $auth = app('auth');
+                    // Try to get the guard configuration
+                    $guardConfig = config('auth.guards.customer');
+                    if ($guardConfig) {
+                        $this->info('✅ Verified customer guard configuration');
+                    }
+                }
+            } catch (\Exception $e) {
+                // Ignore - this is just a verification step
             }
         } else {
             $this->warn('⚠️  Could not automatically configure customer guard. Please add manually.');
