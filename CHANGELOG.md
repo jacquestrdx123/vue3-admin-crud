@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.38] - 2024-12-XX
+
+### Fixed
+
+- Fixed void function return error in `updateCustomersConfig` method - changed `return false;` to `return;` to match void return type
+
 ## [2.4.37] - 2024-12-XX
 
 ### Fixed

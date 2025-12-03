@@ -242,7 +242,7 @@ class InstallCommand extends Command
                 File::copy($packageConfigPath, $configPath);
             } else {
                 $this->warn('⚠️  Could not find package config file. Please publish config manually.');
-                return false;
+                return;
             }
         }
 
