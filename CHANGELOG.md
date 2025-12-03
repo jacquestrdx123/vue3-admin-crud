@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.34] - 2024-12-XX
+
+### Fixed
+
+- Fixed menu item routes to be properly added to routes/admin.php inside protected middleware group
+- Fixed route generation to insert routes with correct indentation inside admin routes group
+- Updated menu system next steps to reference /admin/ routes instead of /vue/
+
+### Changed
+
+- Standardized UserResource question to match Customer Resource question format
+- Updated AdminLayout to include Menu Groups and Menu Items links in user dropdown menu
+- Added menu items from MenuBuilder config to AdminLayout user dropdown
+
+### Improved
+
+- Added route verification after menu system creation to confirm routes were added successfully
+- Better error handling and user feedback during resource creation
+
 ## [2.4.33] - 2024-12-XX
 
 ### Changed
