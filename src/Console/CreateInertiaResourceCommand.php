@@ -195,25 +195,39 @@ class CreateInertiaResourceCommand extends Command
             return;
         }
 
-        // Find the admin prefix group and add routes inside it
+        // Find the protected admin routes group and add routes inside it
         // Look for the closing of the protected admin routes group (after logout route)
-        $insertPosition = strrpos($routesContent, "});\n\n// API routes");
+        // The structure is: protected group closes with "    });" then admin prefix closes with "});"
+        $insertPosition = strrpos($routesContent, "        })->name('logout');\n");
         
         if ($insertPosition !== false) {
-            // Insert before API routes section
-            $beforeApi = substr($routesContent, 0, $insertPosition);
-            $afterApi = substr($routesContent, $insertPosition);
-            $routesContent = $beforeApi . "\n" . $stub . "\n" . $afterApi;
+            // Insert after logout route, before closing of protected admin routes group
+            // Need to add proper indentation (8 spaces) to match the protected group indentation
+            $indentedStub = preg_replace('/^/m', '        ', $stub);
+            $beforeLogout = substr($routesContent, 0, $insertPosition + strlen("        })->name('logout');\n"));
+            $afterLogout = substr($routesContent, $insertPosition + strlen("        })->name('logout');\n"));
+            $routesContent = $beforeLogout . "        \n" . $indentedStub . "\n" . $afterLogout;
         } else {
-            // If API routes section not found, append before the closing of admin prefix group
-            $insertPosition = strrpos($routesContent, "});\n\n// API routes for column preferences");
+            // Fallback: try to find the protected middleware group closing before admin prefix closes
+            $insertPosition = strrpos($routesContent, "    });\n});\n\n// API routes");
             if ($insertPosition !== false) {
-                $beforeApi = substr($routesContent, 0, $insertPosition);
-                $afterApi = substr($routesContent, $insertPosition);
-                $routesContent = $beforeApi . "\n" . $stub . "\n" . $afterApi;
+                // Insert before the closing of protected admin routes group
+                // Need to add proper indentation (8 spaces)
+                $indentedStub = preg_replace('/^/m', '        ', $stub);
+                $beforeClose = substr($routesContent, 0, $insertPosition + strlen("    });\n"));
+                $afterClose = substr($routesContent, $insertPosition + strlen("    });\n"));
+                $routesContent = $beforeClose . "\n" . $indentedStub . "\n" . $afterClose;
             } else {
-                // Fallback: append to end of file
-                $routesContent .= "\n\n" . $stub;
+                // Last fallback: try to find before API routes section (outside admin prefix)
+                $insertPosition = strrpos($routesContent, "});\n\n// API routes for column preferences");
+                if ($insertPosition !== false) {
+                    $beforeApi = substr($routesContent, 0, $insertPosition);
+                    $afterApi = substr($routesContent, $insertPosition);
+                    $routesContent = $beforeApi . "\n" . $stub . "\n" . $afterApi;
+                } else {
+                    // Final fallback: append to end of file
+                    $routesContent .= "\n\n" . $stub;
+                }
             }
         }
 

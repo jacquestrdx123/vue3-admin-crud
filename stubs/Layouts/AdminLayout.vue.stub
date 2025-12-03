@@ -97,12 +97,53 @@
               <Transition name="dropdown">
                 <div
                   v-if="showUserMenu"
-                  class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
+                  class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50 max-h-96 overflow-y-auto"
                 >
                   <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                     <p class="text-sm font-medium text-gray-900 dark:text-white">{{ user?.name }}</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ user?.email }}</p>
                   </div>
+                  
+                  <!-- Menu Management Links -->
+                  <div class="py-1 border-b border-gray-200 dark:border-gray-700">
+                    <a
+                      @click.prevent="navigate('/admin/menu-groups')"
+                      href="#"
+                      class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                      <span>Menu Groups</span>
+                    </a>
+                    <a
+                      @click.prevent="navigate('/admin/menu-items')"
+                      href="#"
+                      class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <span>Menu Items</span>
+                    </a>
+                  </div>
+                  
+                  <!-- Menu Items from Menu Config -->
+                  <div v-if="menuItems.length > 0" class="py-1 border-b border-gray-200 dark:border-gray-700">
+                    <a
+                      v-for="item in menuItems"
+                      :key="item.key"
+                      @click.prevent="navigate(item.url)"
+                      href="#"
+                      class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <svg v-if="item.icon" class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
+                      </svg>
+                      <span class="truncate">{{ item.label }}</span>
+                    </a>
+                  </div>
+                  
                   <a
                     @click.prevent="logout"
                     href="#"
@@ -157,6 +198,47 @@ const navigation = computed(() => {
     },
     // Add more navigation items as needed
   ]
+})
+
+// Get menu items from MenuBuilder (shared via Inertia)
+// Menu structure: [{ key, label, icon, items: [{ key, label, icon, url, children?: [...] }] }]
+const menuItems = computed(() => {
+  const menu = page.props.menu || []
+  if (!Array.isArray(menu) || menu.length === 0) {
+    return []
+  }
+  
+  // Flatten menu structure: extract all items from all groups (including nested children)
+  const flattenItems = (items, parentLabel = '') => {
+    const result = []
+    if (!Array.isArray(items)) return result
+    
+    items.forEach((item) => {
+      // Add the item itself
+      result.push({
+        key: item.key || item.label,
+        label: parentLabel ? `${parentLabel} > ${item.label || item.name || ''}` : (item.label || item.name || ''),
+        icon: item.icon || null,
+        url: item.url || item.href || '#',
+      })
+      
+      // Recursively add children
+      if (item.children && Array.isArray(item.children) && item.children.length > 0) {
+        result.push(...flattenItems(item.children, item.label || item.name || ''))
+      }
+    })
+    
+    return result
+  }
+  
+  const items = []
+  menu.forEach((group) => {
+    if (group.items && Array.isArray(group.items)) {
+      items.push(...flattenItems(group.items))
+    }
+  })
+  
+  return items
 })
 
 const isActive = (href) => {

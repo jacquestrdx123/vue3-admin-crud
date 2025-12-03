@@ -124,7 +124,7 @@ class InstallCommand extends Command
         $this->newLine();
         
         // Ask if user wants to create the initial User Resource
-        if ($this->confirm('Do you want to create the initial User Resource?', true)) {
+        if ($this->confirm('Do you want to create a Resource for the User model?', true)) {
             $this->info('📦 Creating User Resource...');
             $this->newLine();
             
@@ -136,19 +136,21 @@ class InstallCommand extends Command
                 if (!class_exists($userModel)) {
                     $this->warn('⚠️  User model not found. Skipping User Resource creation.');
                     $this->comment('   Please create the User Resource manually: php artisan make:inertia-resource "App\\Models\\User" --all');
+                    $this->newLine();
                 } else {
                     $this->call('make:inertia-resource', [
                         'model' => $userModel,
                         '--all' => true,
                     ]);
+                    $this->newLine();
                 }
             } else {
                 $this->call('make:inertia-resource', [
                     'model' => $userModel,
                     '--all' => true,
                 ]);
+                $this->newLine();
             }
-            $this->newLine();
         }
 
         // Ask if user wants to create Menu Groups and Items
@@ -1810,6 +1812,37 @@ CSS;
             $this->comment('   Then run: php artisan make:inertia-resource "App\\Models\\MenuItem" --all');
         }
 
+        // Verify routes were added to routes/admin.php
+        $this->newLine();
+        $this->info('🔍 Verifying routes...');
+        $adminRoutesFile = base_path('routes/admin.php');
+        $menuGroupRoutesAdded = false;
+        $menuItemRoutesAddedToFile = false;
+        
+        if (File::exists($adminRoutesFile)) {
+            $routesContent = File::get($adminRoutesFile);
+            
+            // Check for menu-groups routes
+            if (strpos($routesContent, "Route::prefix('menu-groups')") !== false || 
+                strpos($routesContent, 'Route::prefix("menu-groups")') !== false) {
+                $menuGroupRoutesAdded = true;
+                $this->info('✅ MenuGroup routes found in routes/admin.php');
+            } else {
+                $this->warn('⚠️  MenuGroup routes not found in routes/admin.php');
+            }
+            
+            // Check for menu-items routes
+            if (strpos($routesContent, "Route::prefix('menu-items')") !== false || 
+                strpos($routesContent, 'Route::prefix("menu-items")') !== false) {
+                $menuItemRoutesAddedToFile = true;
+                $this->info('✅ MenuItem routes found in routes/admin.php');
+            } else {
+                $this->warn('⚠️  MenuItem routes not found in routes/admin.php');
+            }
+        } else {
+            $this->warn('⚠️  routes/admin.php not found. Routes may need to be added manually.');
+        }
+
         $this->newLine();
         $this->info('✅ Menu system setup complete!');
         $this->newLine();
@@ -1819,6 +1852,13 @@ CSS;
         }
         $this->comment('   2. Seed your menu data in the database');
         $this->comment('   3. Use MenuBuilder::build() to share menu data with Inertia');
-        $this->comment('   4. Access menu management at: /vue/menu-groups and /vue/menu-items');
+        if ($menuGroupRoutesAdded && $menuItemRoutesAddedToFile) {
+            $this->comment('   4. Access menu management at: /admin/menu-groups and /admin/menu-items');
+        } else {
+            $this->comment('   4. Access menu management at: /admin/menu-groups and /admin/menu-items');
+            if (!$menuGroupRoutesAdded || !$menuItemRoutesAddedToFile) {
+                $this->warn('   ⚠️  Note: Some routes may need to be added manually to routes/admin.php');
+            }
+        }
     }
 }
