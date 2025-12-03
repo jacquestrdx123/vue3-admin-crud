@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.36] - 2024-12-XX
+
+### Fixed
+
+- Fixed fatal error in `updateCustomersConfig` method when package config file is not found - changed bare `return;` to `return false;` to satisfy return type requirement
+
 ## [2.4.35] - 2024-12-XX
 
 ### Added
