@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.37] - 2024-12-XX
+
+### Fixed
+
+- Fixed CustomerResource routes not being added to admin.php during installation - moved CustomerResource creation to after admin routes are created
+- Fixed variable tracking bug where customerResourceCreated was being reset twice
+- CustomerResource routes are now properly added to admin.php when created during installation
+
+### Improved
+
+- Refactored install process to ensure proper order: admin routes are created before CustomerResource, ensuring routes can be added successfully
+- Deferred CustomerResource creation until after admin.php exists, preventing route insertion failures
+
 ## [2.4.36] - 2024-12-XX
 
 ### Fixed

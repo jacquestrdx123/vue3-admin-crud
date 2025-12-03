@@ -22,6 +22,20 @@ class InstallCommand extends Command
     protected $description = 'Install Vue Admin Panel npm dependencies and configuration';
 
     /**
+     * Customer model class name (if customers are enabled)
+     *
+     * @var string|null
+     */
+    protected $customerModel = null;
+
+    /**
+     * Whether to create CustomerResource (deferred until after admin routes are created)
+     *
+     * @var bool
+     */
+    protected $shouldCreateCustomerResource = false;
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
@@ -35,7 +49,7 @@ class InstallCommand extends Command
         
         // Ask if user wants to use Customers
         $useCustomers = $this->confirm('Do you want to use Customers?', false);
-        $customerResourceCreated = $this->updateCustomersConfig($useCustomers, $customerResourceCreated);
+        $this->updateCustomersConfig($useCustomers);
         $this->newLine();
 
         // Merge package.json dependencies
@@ -131,10 +145,6 @@ class InstallCommand extends Command
         $userResourceCreated = false;
         $customerResourceCreated = false;
         
-        // Track which resources were created
-        $userResourceCreated = false;
-        $customerResourceCreated = false;
-        
         // Ask if user wants to create the initial User Resource
         if ($this->confirm('Do you want to create a Resource for the User model?', true)) {
             $this->info('📦 Creating User Resource...');
@@ -167,6 +177,26 @@ class InstallCommand extends Command
             }
         }
 
+        // Create Customer Resource if customers are enabled and requested (after admin routes exist)
+        if ($this->shouldCreateCustomerResource && $this->customerModel) {
+            $this->newLine();
+            $this->info('📦 Creating Customer Resource...');
+            
+            // Check if Customer model exists
+            if (class_exists($this->customerModel)) {
+                $this->call('make:inertia-resource', [
+                    'model' => $this->customerModel,
+                    '--all' => true,
+                ]);
+                $this->newLine();
+                $customerResourceCreated = true;
+            } else {
+                $this->warn("⚠️  Customer model '{$this->customerModel}' not found. Skipping Customer Resource creation.");
+                $this->comment("   Please create the Customer Resource manually: php artisan make:inertia-resource \"{$this->customerModel}\" --all");
+                $this->newLine();
+            }
+        }
+
         // Ask if user wants to create Menu Groups and Items
         if ($this->confirm('Create Menu Groups and Items?', false)) {
             $this->info('📦 Creating Menu Groups and Items...');
@@ -196,7 +226,7 @@ class InstallCommand extends Command
     /**
      * Update customers configuration
      */
-    protected function updateCustomersConfig(bool $useCustomers, bool $customerResourceCreated): bool
+    protected function updateCustomersConfig(bool $useCustomers): void
     {
         $configPath = config_path('inertia-resource.php');
         $packageConfigPath = __DIR__.'/../../config/inertia-resource.php';
@@ -326,17 +356,11 @@ class InstallCommand extends Command
                     $configContent
                 );
                 
-                // Ask if user wants to create Customer Resource
+                // Store customer model and ask if user wants to create Customer Resource
+                // (deferred until after admin routes are created)
+                $this->customerModel = $customerModel;
                 if ($this->confirm('Do you want to create a Resource for the Customer model?', true)) {
-                    $this->info('📦 Creating Customer Resource...');
-                    $this->newLine();
-                    
-                    $this->call('make:inertia-resource', [
-                        'model' => $customerModel,
-                        '--all' => true,
-                    ]);
-                    $this->newLine();
-                    $customerResourceCreated = true;
+                    $this->shouldCreateCustomerResource = true;
                 }
                 
                 // Configure customer guard in auth.php
@@ -353,8 +377,6 @@ class InstallCommand extends Command
         } else {
             $this->warn('⚠️  Could not update config/inertia-resource.php. Please set use_customers manually.');
         }
-        
-        return $customerResourceCreated;
     }
 
     /**
