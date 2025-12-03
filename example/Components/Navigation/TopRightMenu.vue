@@ -44,12 +44,12 @@
               <span>Members</span>
             </a>
             <a
-              @click.prevent="goToMenuItems"
+              @click.prevent="goToMenuGroups"
               href="#"
               class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               <MaterialIcon icon="mdi-menu" />
-              <span>Menu Items</span>
+              <span>Menu Groups</span>
             </a>
             <a
               @click.prevent="openMenuBuilder"
@@ -136,10 +136,14 @@ const goToDashboard = () => {
   if (url) router.visit(url)
 }
 
-const goToMenuItems = () => {
+const goToMenuGroups = () => {
   showMenu.value = false
   const url = route('vue.menu-groups.index')
-  if (url) router.visit(url)
+  if (url) {
+    router.visit(url)
+  } else {
+    console.warn('Menu Groups route not found. Please ensure menu groups resource is created.')
+  }
 }
 
 const openMenuBuilder = () => {
