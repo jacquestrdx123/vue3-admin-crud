@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.33] - 2024-12-XX
+
+### Changed
+
+- Updated TopRightMenu: Renamed "Menu Items" to "Menu Groups" for better clarity
+- Improved menu navigation with clearer labeling
+
 ## [2.4.32] - 2024-12-XX
 
 ### Changed
