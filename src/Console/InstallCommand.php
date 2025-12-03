@@ -1606,11 +1606,15 @@ CSS;
         $adminLayoutPath = $layoutsPath.'/AdminLayout.vue';
         if (File::exists($adminLayoutStub)) {
             if (File::exists($adminLayoutPath)) {
-                $this->warn('AdminLayout.vue already exists. Skipping...');
+                // Always update AdminLayout.vue to ensure it exists and is up to date
+                File::copy($adminLayoutStub, $adminLayoutPath);
+                $this->info('Updated AdminLayout.vue');
             } else {
                 File::copy($adminLayoutStub, $adminLayoutPath);
                 $this->info('Created AdminLayout.vue');
             }
+        } else {
+            $this->warn('⚠️  AdminLayout.vue.stub not found. Please create resources/js/Layouts/AdminLayout.vue manually.');
         }
 
         // DashboardLayout
