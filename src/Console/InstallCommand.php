@@ -29,9 +29,13 @@ class InstallCommand extends Command
         $this->info('🚀 Installing Vue Admin Panel...');
         $this->newLine();
 
+        // Track which resources were created
+        $userResourceCreated = false;
+        $customerResourceCreated = false;
+        
         // Ask if user wants to use Customers
         $useCustomers = $this->confirm('Do you want to use Customers?', false);
-        $this->updateCustomersConfig($useCustomers);
+        $customerResourceCreated = $this->updateCustomersConfig($useCustomers, $customerResourceCreated);
         $this->newLine();
 
         // Merge package.json dependencies
@@ -123,6 +127,14 @@ class InstallCommand extends Command
         $this->fixViteConfig();
         $this->newLine();
         
+        // Track which resources were created
+        $userResourceCreated = false;
+        $customerResourceCreated = false;
+        
+        // Track which resources were created
+        $userResourceCreated = false;
+        $customerResourceCreated = false;
+        
         // Ask if user wants to create the initial User Resource
         if ($this->confirm('Do you want to create a Resource for the User model?', true)) {
             $this->info('📦 Creating User Resource...');
@@ -143,6 +155,7 @@ class InstallCommand extends Command
                         '--all' => true,
                     ]);
                     $this->newLine();
+                    $userResourceCreated = true;
                 }
             } else {
                 $this->call('make:inertia-resource', [
@@ -150,6 +163,7 @@ class InstallCommand extends Command
                     '--all' => true,
                 ]);
                 $this->newLine();
+                $userResourceCreated = true;
             }
         }
 
@@ -159,6 +173,11 @@ class InstallCommand extends Command
             $this->newLine();
             $this->createMenuSystem();
             $this->newLine();
+        }
+        
+        // Create and run ResourceMenuSeeder if any resources were created
+        if ($userResourceCreated || $customerResourceCreated) {
+            $this->createAndRunResourceMenuSeeder();
         }
         
         $this->newLine();
@@ -177,7 +196,7 @@ class InstallCommand extends Command
     /**
      * Update customers configuration
      */
-    protected function updateCustomersConfig(bool $useCustomers): void
+    protected function updateCustomersConfig(bool $useCustomers, bool $customerResourceCreated): bool
     {
         $configPath = config_path('inertia-resource.php');
         $packageConfigPath = __DIR__.'/../../config/inertia-resource.php';
@@ -317,6 +336,7 @@ class InstallCommand extends Command
                         '--all' => true,
                     ]);
                     $this->newLine();
+                    $customerResourceCreated = true;
                 }
                 
                 // Configure customer guard in auth.php
@@ -333,6 +353,8 @@ class InstallCommand extends Command
         } else {
             $this->warn('⚠️  Could not update config/inertia-resource.php. Please set use_customers manually.');
         }
+        
+        return $customerResourceCreated;
     }
 
     /**
@@ -1863,6 +1885,97 @@ CSS;
             if (!$menuGroupRoutesAdded || !$menuItemRoutesAddedToFile) {
                 $this->warn('   ⚠️  Note: Some routes may need to be added manually to routes/admin.php');
             }
+        }
+    }
+
+    /**
+     * Create and run ResourceMenuSeeder (creates menu items for UserResource and CustomerResource)
+     */
+    protected function createAndRunResourceMenuSeeder(): void
+    {
+        // Ensure menu migrations are run first
+        $this->ensureMenuMigrationsRun();
+        
+        $seedersPath = database_path('seeders');
+        $seederFile = "{$seedersPath}/ResourceMenuSeeder.php";
+        $seederStub = __DIR__.'/../../database/seeders/ResourceMenuSeeder.php.stub';
+        
+        // Check if seeder already exists
+        if (File::exists($seederFile)) {
+            $this->comment('ℹ️  ResourceMenuSeeder already exists. Skipping creation.');
+        } else {
+            if (File::exists($seederStub)) {
+                // Create seeders directory if it doesn't exist
+                if (!File::exists($seedersPath)) {
+                    File::makeDirectory($seedersPath, 0755, true);
+                }
+                
+                File::copy($seederStub, $seederFile);
+                $this->info('✅ Created ResourceMenuSeeder.php');
+            } else {
+                $this->warn('⚠️  ResourceMenuSeeder.php.stub not found.');
+                return;
+            }
+        }
+        
+        // Run the seeder
+        $this->runSeeder('ResourceMenuSeeder');
+    }
+
+    /**
+     * Ensure menu migrations are run before seeders
+     */
+    protected function ensureMenuMigrationsRun(): void
+    {
+        $migrationsPath = database_path('migrations');
+        $menuGroupsMigration = glob($migrationsPath . '/*_create_menu_groups_table.php');
+        $menuItemsMigration = glob($migrationsPath . '/*_create_menu_items_table.php');
+        
+        // Check if migrations exist
+        if (empty($menuGroupsMigration) || empty($menuItemsMigration)) {
+            $this->warn('⚠️  Menu migrations not found. Publishing migrations...');
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-migrations',
+                '--force' => false,
+            ]);
+        }
+        
+        // Check if migrations have been run by checking if tables exist
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('menu_groups') && 
+                \Illuminate\Support\Facades\Schema::hasTable('menu_items')) {
+                // Tables exist, migrations have been run
+                return;
+            }
+        } catch (\Exception $e) {
+            // Database connection might not be available, that's okay
+        }
+        
+        // Ask user if they want to run migrations
+        if ($this->confirm('Menu migrations need to be run before seeders. Run migrations now?', true)) {
+            $this->info('🔄 Running migrations...');
+            $this->call('migrate', ['--force' => true]);
+            $this->info('✅ Migrations completed.');
+        } else {
+            $this->warn('⚠️  Skipping migration run. Please run migrations manually: php artisan migrate');
+        }
+    }
+
+    /**
+     * Run a seeder class
+     */
+    protected function runSeeder(string $seederClass): void
+    {
+        try {
+            $this->info("🌱 Running {$seederClass}...");
+            $this->call('db:seed', [
+                '--class' => $seederClass,
+                '--force' => true,
+            ]);
+            $this->info("✅ {$seederClass} completed successfully.");
+        } catch (\Exception $e) {
+            $this->warn("⚠️  Could not run {$seederClass}: " . $e->getMessage());
+            $this->comment("   Please run manually: php artisan db:seed --class={$seederClass}");
         }
     }
 }

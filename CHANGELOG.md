@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.35] - 2024-12-XX
+
+### Added
+
+- Added ResourceMenuSeeder that automatically creates "Administration" menu group and menu items for UserResource and CustomerResource
+- Seeder creates menu items only for resources that were selected during installation
+- Automatic seeder execution after resource creation during installation
+
+### Fixed
+
+- Fixed seeder creation to use single ResourceMenuSeeder instead of separate seeders
+- Fixed variable scope issue for tracking resource creation across methods
+
+### Improved
+
+- Seeders now check for route existence to determine which menu items to create
+- Better duplicate prevention for menu groups and items using firstOrCreate()
+- Migrations are automatically checked and run before seeders execute
+
 ## [2.4.34] - 2024-12-XX
 
 ### Fixed

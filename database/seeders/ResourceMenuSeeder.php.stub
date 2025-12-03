@@ -1,0 +1,72 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Route;
+use App\Models\MenuGroup;
+use App\Models\MenuItem;
+
+class ResourceMenuSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        // Check if MenuGroup and MenuItem models exist
+        if (!class_exists(MenuGroup::class) || !class_exists(MenuItem::class)) {
+            $this->command->warn('⚠️  MenuGroup or MenuItem models not found. Skipping menu seeding.');
+            return;
+        }
+
+        // Create or get "Administration" menu group
+        $adminGroup = MenuGroup::firstOrCreate(
+            ['key' => 'administration'],
+            [
+                'label' => 'Administration',
+                'sort_order' => 1,
+                'is_active' => true,
+            ]
+        );
+
+        $sortOrder = 1;
+
+        // Create Users menu item if the route exists (UserResource was created)
+        if (Route::has('admin.users.index')) {
+            MenuItem::firstOrCreate(
+                [
+                    'menu_group_id' => $adminGroup->id,
+                    'key' => 'users',
+                ],
+                [
+                    'label' => 'Users',
+                    'route' => 'admin.users.index',
+                    'sort_order' => $sortOrder++,
+                    'is_active' => true,
+                    'parent_id' => null,
+                ]
+            );
+            $this->command->info('✅ Created Users menu item in Administration group.');
+        }
+
+        // Create Customers menu item if the route exists (CustomerResource was created)
+        if (Route::has('admin.customers.index')) {
+            MenuItem::firstOrCreate(
+                [
+                    'menu_group_id' => $adminGroup->id,
+                    'key' => 'customers',
+                ],
+                [
+                    'label' => 'Customers',
+                    'route' => 'admin.customers.index',
+                    'sort_order' => $sortOrder++,
+                    'is_active' => true,
+                    'parent_id' => null,
+                ]
+            );
+            $this->command->info('✅ Created Customers menu item in Administration group.');
+        }
+    }
+}
+
