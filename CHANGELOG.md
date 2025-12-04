@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.43] - 2024-12-04
+
+### Fixed
+
+- Fixed ziggy-js path resolution in vite.config.js for ES modules
+- Added proper \_\_dirname support using import.meta.url for path resolution
+- Fixed "ziggy-js could not be resolved" error in Vite
+- Updated vite.config.js stub to use path.resolve with \_\_dirname for absolute paths
+- Updated README with troubleshooting steps for ziggy-js resolution errors
+
 ## [2.4.42] - 2024-12-04
 
 ### Fixed
