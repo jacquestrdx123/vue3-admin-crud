@@ -69,7 +69,7 @@ php artisan vendor:publish --tag=inertia-resource-login-pages  # Login pages onl
 
 ### Vite Configuration
 
-Update your `vite.config.js` to include Tailwind CSS 4, Vue support, and Ziggy alias:
+Update your `vite.config.js` to include Tailwind CSS 4 and Vue support:
 
 ```javascript
 import { defineConfig } from "vite";
@@ -100,10 +100,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "resources/js"),
-      "ziggy-js": path.resolve(
-        __dirname,
-        "vendor/tightenco/ziggy/dist/vue.es.js"
-      ),
     },
   },
 });
@@ -137,7 +133,7 @@ This package includes Ziggy for Laravel route helpers in Vue. The setup is autom
 4. **Check your JavaScript entry point** - Ensure `resources/js/app.js` includes ZiggyVue:
 
    ```javascript
-   import { ZiggyVue } from "ziggy-js";
+   import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/vue.es.js';
 
    createInertiaApp({
      setup({ el, App, props, plugin }) {
@@ -149,33 +145,19 @@ This package includes Ziggy for Laravel route helpers in Vue. The setup is autom
    });
    ```
 
+   **Note:** We use a direct import path to the vendor directory - no npm package or Vite alias is required!
+
 5. **If you see "ziggy-js could not be resolved" error in Vite:**
 
-   - Ensure your `vite.config.js` has the correct ziggy-js alias:
-
-     ```javascript
-     import path from "path";
-     import { fileURLToPath } from "url";
-
-     const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-     export default defineConfig({
-       resolve: {
-         alias: {
-           "ziggy-js": path.resolve(
-             __dirname,
-             "vendor/tightenco/ziggy/dist/vue.es.js"
-           ),
-         },
-       },
-     });
-     ```
-
-   - Verify Ziggy is installed: `composer show tightenco/ziggy`
-
+   This error should not occur with the direct import path. If you see it:
+   
+   - Verify Ziggy is installed via Composer: `composer show tightenco/ziggy`
+   
    - Verify the file exists: `ls -la vendor/tightenco/ziggy/dist/vue.es.js`
-
-   - If the path doesn't exist, try: `php artisan ziggy:generate` (if available) or reinstall Ziggy
+   
+   - Make sure `vendor/tightenco/ziggy` exists - if not, run `composer install`
+   
+   - Ensure your `app.js` uses the direct import path (not an alias)
 
 ## Updating the Package
 
