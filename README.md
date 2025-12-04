@@ -11,6 +11,7 @@ A Filament-like resource system for Inertia.js applications. This package provid
 - Inertia.js (automatically installed with this package)
 - Vue 3.x (automatically installed with this package)
 - Tailwind CSS 4 (automatically installed with this package)
+- Ziggy (automatically installed with this package via Composer)
 
 ## Installation
 
@@ -24,7 +25,7 @@ composer require jacquestrdx123/vue3-admin-crud
 
 This will automatically:
 
-- ✅ Install all PHP/Laravel dependencies via Composer
+- ✅ Install all PHP/Laravel dependencies via Composer (including Ziggy for route helpers)
 - ✅ Update your `package.json` with Vue 3 and Tailwind CSS 4 dependencies
 - ✅ Set up the package structure
 
@@ -100,6 +101,10 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "resources/js"),
+      "ziggy-js": path.resolve(
+        __dirname,
+        "vendor/tightenco/ziggy/dist/vue.es.js"
+      ),
     },
   },
 });
@@ -107,7 +112,11 @@ export default defineConfig({
 
 ### Ziggy Route Helper Setup
 
-This package includes Ziggy for Laravel route helpers in Vue. The setup is automatically configured, but if you see `@routes` literally rendering on your page, follow these troubleshooting steps:
+This package includes Ziggy for Laravel route helpers in Vue. **Ziggy is automatically installed via Composer** as a dependency when you install this package - no additional npm package is required.
+
+The `ziggy-js` alias in Vite is just a path alias pointing to the vendor directory (`vendor/tightenco/ziggy/dist/vue.es.js`), not an npm package.
+
+The setup is automatically configured, but if you see `@routes` literally rendering on your page, follow these troubleshooting steps:
 
 1. **Update your Blade template** - Ensure `resources/views/app.blade.php` uses `@routes()` with parentheses:
 
@@ -130,10 +139,21 @@ This package includes Ziggy for Laravel route helpers in Vue. The setup is autom
    composer show tightenco/ziggy
    ```
 
-4. **Check your JavaScript entry point** - Ensure `resources/js/app.js` includes ZiggyVue:
+4. **Check your Vite configuration** - Ensure `vite.config.js` includes the Ziggy alias:
 
    ```javascript
-   import { ZiggyVue } from "../../vendor/tightenco/ziggy/dist/vue.es.js";
+   resolve: {
+     alias: {
+       "@": path.resolve(__dirname, "resources/js"),
+       "ziggy-js": path.resolve(__dirname, "vendor/tightenco/ziggy/dist/vue.es.js"),
+     },
+   },
+   ```
+
+5. **Check your JavaScript entry point** - Ensure `resources/js/app.js` includes ZiggyVue:
+
+   ```javascript
+   import { ZiggyVue } from "ziggy-js";
 
    createInertiaApp({
      setup({ el, App, props, plugin }) {
@@ -145,19 +165,14 @@ This package includes Ziggy for Laravel route helpers in Vue. The setup is autom
    });
    ```
 
-   **Note:** We use a direct import path to the vendor directory - no npm package or Vite alias is required!
-
-5. **If you see "ziggy-js could not be resolved" error in Vite:**
-
-   This error should not occur with the direct import path. If you see it:
+6. **If you see "ziggy-js could not be resolved" error in Vite:**
 
    - Verify Ziggy is installed via Composer: `composer show tightenco/ziggy`
-
    - Verify the file exists: `ls -la vendor/tightenco/ziggy/dist/vue.es.js`
-
    - Make sure `vendor/tightenco/ziggy` exists - if not, run `composer install`
-
-   - Ensure your `app.js` uses the direct import path (not an alias)
+   - Ensure your `vite.config.js` includes the `ziggy-js` alias
+   - Ensure your `app.js` uses the alias: `import { ZiggyVue } from "ziggy-js"`
+   - Restart your Vite dev server after updating the config
 
 ## Updating the Package
 

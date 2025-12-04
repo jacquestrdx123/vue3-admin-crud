@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.47] - 2024-12-04
+
+### Fixed
+
+- Fixed Ziggy import path resolution in Vite by adding proper alias
+- Changed from relative path import to Vite alias for better resolution
+- Added `ziggy-js` alias in vite.config.js pointing to vendor/tightenco/ziggy/dist/vue.es.js
+- Updated app.js.stub to use `import { ZiggyVue } from "ziggy-js"` instead of relative path
+- Resolves "Failed to resolve import" errors in fresh installations
+
+### Improved
+
+- Enhanced README documentation to clarify Ziggy installation process
+- Added Ziggy to Requirements section as automatically installed dependency
+- Clarified that ziggy-js alias is a Vite path alias, not an npm package
+- Updated troubleshooting steps for Ziggy setup
+
 ## [2.4.46] - 2024-12-04
 
 ### Added
