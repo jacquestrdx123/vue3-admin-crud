@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.41] - 2024-12-04
+
+### Added
+
+- Added comprehensive Ziggy troubleshooting section to README.md
+- Added Ziggy alias to Vite configuration example in README
+- Added step-by-step troubleshooting guide for `@routes` directive issues
+
+### Improved
+
+- Enhanced README documentation with complete Ziggy setup instructions
+- Added troubleshooting steps for common Ziggy Blade directive issues
+
 ## [2.4.40] - 2024-12-04
 
 ### Added

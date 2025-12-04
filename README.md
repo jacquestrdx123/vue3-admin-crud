@@ -69,13 +69,14 @@ php artisan vendor:publish --tag=inertia-resource-login-pages  # Login pages onl
 
 ### Vite Configuration
 
-Update your `vite.config.js` to include Tailwind CSS 4 and Vue support:
+Update your `vite.config.js` to include Tailwind CSS 4, Vue support, and Ziggy alias:
 
 ```javascript
 import { defineConfig } from "vite";
 import laravel, { refreshPaths } from "laravel-vite-plugin";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
+import path from "path";
 
 export default defineConfig({
   plugins: [
@@ -96,10 +97,51 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": "/resources/js",
+      "ziggy-js": path.resolve("vendor/tightenco/ziggy/dist/vue.es.js"),
     },
   },
 });
 ```
+
+### Ziggy Route Helper Setup
+
+This package includes Ziggy for Laravel route helpers in Vue. The setup is automatically configured, but if you see `@routes` literally rendering on your page, follow these troubleshooting steps:
+
+1. **Update your Blade template** - Ensure `resources/views/app.blade.php` uses `@routes()` with parentheses:
+
+   ```blade
+   <!-- Scripts -->
+   @routes()
+   @vite(['resources/css/app.css', 'resources/js/app.js'])
+   @inertiaHead
+   ```
+
+2. **Clear Blade view cache**:
+
+   ```bash
+   php artisan view:clear
+   ```
+
+3. **Verify Ziggy is installed**:
+
+   ```bash
+   composer show tightenco/ziggy
+   ```
+
+4. **Check your JavaScript entry point** - Ensure `resources/js/app.js` includes ZiggyVue:
+
+   ```javascript
+   import { ZiggyVue } from "ziggy-js";
+
+   createInertiaApp({
+     setup({ el, App, props, plugin }) {
+       return createApp({ render: () => h(App, props) })
+         .use(plugin)
+         .use(ZiggyVue) // ← This must be present
+         .mount(el);
+     },
+   });
+   ```
 
 ## Updating the Package
 
