@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.39] - 2024-12-XX
+
+### Fixed
+
+- Fixed missing `route` import error in resource Vue components (Create, Edit, Index, Show)
+- Removed individual `route` imports from resource components - now uses global `route` function via `@routes` Blade directive
+- Added `@routes` directive to app.blade.php.stub to make Ziggy route helper available globally
+- Simplified bootstrap.js setup - removed Ziggy setup since `@routes` handles it automatically
+
+### Changed
+
+- Resource Vue components now use global `route()` function instead of importing from 'ziggy-js'
+- This follows the standard Ziggy setup pattern and eliminates the need for imports in each component
+
 ## [2.4.38] - 2024-12-XX
 
 ### Fixed
