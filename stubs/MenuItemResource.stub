@@ -1,0 +1,129 @@
+<?php
+
+namespace {{ namespace }};
+
+use InertiaResource\Inertia\InertiaResource;
+use InertiaResource\Columns\TextColumn;
+use InertiaResource\Columns\BooleanColumn;
+use InertiaResource\Columns\NumberColumn;
+use InertiaResource\FormFields\TextField;
+use InertiaResource\FormFields\ToggleField;
+use InertiaResource\FormFields\NumberField;
+use InertiaResource\FormFields\RelationshipField;
+use InertiaResource\Filters\BooleanFilter;
+use InertiaResource\Filters\SelectFilter;
+
+class MenuItemResource extends InertiaResource
+{
+    protected static ?string $model = \{{ model }}::class;
+
+    protected static ?string $title = 'Menu Items';
+
+    protected static ?string $slug = 'menu-items';
+
+    protected static ?string $navigationGroup = 'System';
+
+    protected static ?string $navigationIcon = 'heroicon-o-bars-3-bottom-left';
+
+    protected static ?int $navigationSort = 101;
+
+    protected static string $indexPage = '{{ vuePagePath }}/Index';
+
+    protected static string $createPage = '{{ vuePagePath }}/Create';
+
+    protected static string $editPage = '{{ vuePagePath }}/Edit';
+
+    protected static string $showPage = '{{ vuePagePath }}/Show';
+
+    public static function table(): array
+    {
+        return [
+            'columns' => [
+                TextColumn::make('id', 'ID'),
+                TextColumn::make('menu_group.label', 'Menu Group')
+                    ->searchable(),
+                TextColumn::make('parent.label', 'Parent')
+                    ->searchable(),
+                TextColumn::make('key', 'Key')
+                    ->searchable(),
+                TextColumn::make('label', 'Label')
+                    ->searchable(),
+                TextColumn::make('url', 'URL'),
+                TextColumn::make('route', 'Route'),
+                TextColumn::make('icon', 'Icon'),
+                TextColumn::make('permission_name', 'Permission'),
+                NumberColumn::make('sort_order', 'Sort Order'),
+                BooleanColumn::make('is_active', 'Active'),
+                BooleanColumn::make('is_group_header', 'Group Header'),
+            ],
+            'filters' => [
+                SelectFilter::make('menu_group_id', 'Menu Group'),
+                SelectFilter::make('parent_id', 'Parent Item'),
+                BooleanFilter::make('is_active', 'Active'),
+                BooleanFilter::make('is_group_header', 'Group Header'),
+            ],
+            'actions' => [
+                // Add your actions here
+            ],
+            'bulkActions' => [
+                // Add your bulk actions here
+            ],
+        ];
+    }
+
+    public static function form(): array
+    {
+        return [
+            RelationshipField::make('menu_group_id', 'Menu Group')
+                ->required()
+                ->relationship('menuGroup', 'label')
+                ->placeholder('Select menu group')
+                ->hint('The menu group this item belongs to'),
+            
+            RelationshipField::make('parent_id', 'Parent Item')
+                ->relationship('parent', 'label')
+                ->placeholder('Select parent item (optional)')
+                ->hint('Parent menu item for nested menus (leave empty for top-level items)'),
+            
+            TextField::make('key', 'Key')
+                ->required()
+                ->placeholder('Enter unique key')
+                ->hint('Unique identifier for the menu item'),
+            
+            TextField::make('label', 'Label')
+                ->required()
+                ->placeholder('Enter label')
+                ->hint('Display name for the menu item'),
+            
+            TextField::make('url', 'URL')
+                ->placeholder('Enter URL (e.g., /dashboard)')
+                ->hint('Direct URL link (leave empty if using route)'),
+            
+            TextField::make('route', 'Route')
+                ->placeholder('Enter route name (e.g., admin.dashboard)')
+                ->hint('Laravel route name (leave empty if using URL)'),
+            
+            TextField::make('icon', 'Icon')
+                ->placeholder('Enter icon name (e.g., heroicon-o-home)')
+                ->hint('Icon identifier for the menu item'),
+            
+            TextField::make('permission_name', 'Permission')
+                ->placeholder('Enter permission name (optional)')
+                ->hint('Required permission to view this menu item'),
+            
+            NumberField::make('sort_order', 'Sort Order')
+                ->default(0)
+                ->min(0)
+                ->placeholder('Enter sort order')
+                ->hint('Display order (lower numbers appear first)'),
+            
+            ToggleField::make('is_active', 'Active')
+                ->default(true)
+                ->hint('Whether this menu item is active'),
+            
+            ToggleField::make('is_group_header', 'Group Header')
+                ->default(false)
+                ->hint('Whether this item is a group header (non-clickable)'),
+        ];
+    }
+}

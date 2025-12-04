@@ -1,0 +1,89 @@
+<?php
+
+namespace {{ namespace }};
+
+use InertiaResource\Inertia\InertiaResource;
+use InertiaResource\Columns\TextColumn;
+use InertiaResource\Columns\BooleanColumn;
+use InertiaResource\Columns\NumberColumn;
+use InertiaResource\FormFields\TextField;
+use InertiaResource\FormFields\ToggleField;
+use InertiaResource\FormFields\NumberField;
+use InertiaResource\Filters\BooleanFilter;
+
+class MenuGroupResource extends InertiaResource
+{
+    protected static ?string $model = \{{ model }}::class;
+
+    protected static ?string $title = 'Menu Groups';
+
+    protected static ?string $slug = 'menu-groups';
+
+    protected static ?string $navigationGroup = 'System';
+
+    protected static ?string $navigationIcon = 'heroicon-o-bars-3';
+
+    protected static ?int $navigationSort = 100;
+
+    protected static string $indexPage = '{{ vuePagePath }}/Index';
+
+    protected static string $createPage = '{{ vuePagePath }}/Create';
+
+    protected static string $editPage = '{{ vuePagePath }}/Edit';
+
+    protected static string $showPage = '{{ vuePagePath }}/Show';
+
+    public static function table(): array
+    {
+        return [
+            'columns' => [
+                TextColumn::make('id', 'ID'),
+                TextColumn::make('key', 'Key')
+                    ->searchable(),
+                TextColumn::make('label', 'Label')
+                    ->searchable(),
+                TextColumn::make('icon', 'Icon'),
+                NumberColumn::make('sort_order', 'Sort Order'),
+                BooleanColumn::make('is_active', 'Active'),
+            ],
+            'filters' => [
+                BooleanFilter::make('is_active', 'Active'),
+            ],
+            'actions' => [
+                // Add your actions here
+            ],
+            'bulkActions' => [
+                // Add your bulk actions here
+            ],
+        ];
+    }
+
+    public static function form(): array
+    {
+        return [
+            TextField::make('key', 'Key')
+                ->required()
+                ->placeholder('Enter unique key')
+                ->hint('Unique identifier for the menu group'),
+            
+            TextField::make('label', 'Label')
+                ->required()
+                ->placeholder('Enter label')
+                ->hint('Display name for the menu group'),
+            
+            TextField::make('icon', 'Icon')
+                ->placeholder('Enter icon name (e.g., heroicon-o-home)')
+                ->hint('Icon identifier for the menu group'),
+            
+            NumberField::make('sort_order', 'Sort Order')
+                ->default(0)
+                ->min(0)
+                ->placeholder('Enter sort order')
+                ->hint('Display order (lower numbers appear first)'),
+            
+            ToggleField::make('is_active', 'Active')
+                ->default(true)
+                ->hint('Whether this menu group is active'),
+        ];
+    }
+}

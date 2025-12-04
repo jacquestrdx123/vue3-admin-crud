@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.46] - 2024-12-04
+
+### Added
+
+- Added MenuGroupResource.stub with all fields from menu_groups table
+- Added MenuItemResource.stub with all fields from menu_items table
+- Complete resource examples with all database fields properly mapped
+- Includes table columns, form fields, filters, and relationship fields
+- Menu Group resource includes: key, label, icon, sort_order, is_active
+- Menu Item resource includes: menu_group_id, parent_id, key, label, url, route, icon, permission_name, sort_order, is_active, is_group_header
+- Proper field types, validation, hints, and placeholders for all fields
+
+### Improved
+
+- Comprehensive example resources showing best practices for defining resources with all fields
+- Relationship fields properly configured for menu groups and parent items
+- All fields from database migrations included in resource definitions
+
 ## [2.4.45] - 2024-12-04
 
 ### Added
