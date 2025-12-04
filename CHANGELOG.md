@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.48] - 2024-12-04
+
+### Fixed
+
+- Fixed Customer model autoloader issue after creation - added opcache reset and delay before checking class_exists()
+- Fixed MenuGroup resource to include all columns (key, label, icon, sort_order, is_active) and form fields
+- Fixed MenuItem resource to include all columns (menu_group_id, parent_id, key, label, url, route, icon, permission_name, sort_order, is_active, is_group_header) and form fields
+
+### Changed
+
+- Changed default overwrite behavior for resource, controller, and Vue file generation from "no" to "yes" - files will be overwritten by default when they already exist
+
 ## [2.4.47] - 2024-12-04
 
 ### Fixed

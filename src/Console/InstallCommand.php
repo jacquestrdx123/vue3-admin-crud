@@ -182,6 +182,13 @@ class InstallCommand extends Command
             $this->newLine();
             $this->info('📦 Creating Customer Resource...');
             
+            // Refresh autoloader before checking if Customer model exists
+            if (function_exists('opcache_reset')) {
+                opcache_reset();
+            }
+            // Give autoloader a moment to catch up
+            usleep(500000); // 0.5 seconds
+            
             // Check if Customer model exists
             if (class_exists($this->customerModel)) {
                 $this->call('make:inertia-resource', [
@@ -347,6 +354,13 @@ class InstallCommand extends Command
                     File::put($modelPath, $modelStub);
                     $this->info("✅ Created Customer model: {$customerModel}");
                     $this->newLine();
+                    
+                    // Clear autoloader cache so the new class can be found
+                    if (function_exists('opcache_reset')) {
+                        opcache_reset();
+                    }
+                    // Give autoloader a moment to catch up
+                    usleep(500000); // 0.5 seconds
                 }
                 
                 // Update config with customer model

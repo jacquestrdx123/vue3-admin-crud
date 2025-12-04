@@ -105,7 +105,7 @@ class CreateInertiaResourceCommand extends Command
         $filePath = "{$path}/{$resourceName}.php";
 
         if (File::exists($filePath)) {
-            if (!$this->confirm("Resource file {$resourceName}.php already exists. Overwrite?", false)) {
+            if (!$this->confirm("Resource file {$resourceName}.php already exists. Overwrite?", true)) {
                 $this->warn("Skipped {$resourceName}.php");
                 return;
             }
@@ -133,6 +133,97 @@ class CreateInertiaResourceCommand extends Command
             );
         }
 
+        // Add default columns and form fields for MenuGroup resource
+        if ($modelName === 'MenuGroup') {
+            // Add imports for additional column and field types
+            $stub = str_replace(
+                "use InertiaResource\Columns\TextColumn;\nuse InertiaResource\FormFields\TextField;",
+                "use InertiaResource\Columns\TextColumn;\nuse InertiaResource\Columns\BooleanColumn;\nuse InertiaResource\Columns\GenericColumn;\nuse InertiaResource\FormFields\TextField;\nuse InertiaResource\FormFields\NumberField;\nuse InertiaResource\FormFields\ToggleField;",
+                $stub
+            );
+            
+            // Generate columns
+            $columnsSection = "                TextColumn::make('id', 'ID'),\n";
+            $columnsSection .= "                TextColumn::make('key', 'Key'),\n";
+            $columnsSection .= "                TextColumn::make('label', 'Label'),\n";
+            $columnsSection .= "                TextColumn::make('icon', 'Icon'),\n";
+            $columnsSection .= "                GenericColumn::make('sort_order', 'Sort Order'),\n";
+            $columnsSection .= "                BooleanColumn::make('is_active', 'Active'),\n";
+            $columnsSection .= "                // Add your columns here";
+            
+            $stub = preg_replace(
+                "/TextColumn::make\('id', 'ID'\),\s*\n\s*\/\/ Add your columns here/",
+                $columnsSection,
+                $stub
+            );
+            
+            // Generate form fields
+            $formFieldsSection = "            TextField::make('key', 'Key')->required(),\n";
+            $formFieldsSection .= "            TextField::make('label', 'Label')->required(),\n";
+            $formFieldsSection .= "            TextField::make('icon', 'Icon'),\n";
+            $formFieldsSection .= "            NumberField::make('sort_order', 'Sort Order')->default(0),\n";
+            $formFieldsSection .= "            ToggleField::make('is_active', 'Active')->default(true),";
+            
+            $stub = preg_replace(
+                "/\/\/ Add your form fields here\s*\n\s*\/\/ TextField::make\('name', 'Name'\)->required\(\),/",
+                $formFieldsSection,
+                $stub
+            );
+        }
+
+        // Add default columns and form fields for MenuItem resource
+        if ($modelName === 'MenuItem') {
+            // Add imports for additional column and field types
+            $stub = str_replace(
+                "use InertiaResource\Columns\TextColumn;\nuse InertiaResource\FormFields\TextField;",
+                "use InertiaResource\Columns\TextColumn;\nuse InertiaResource\Columns\BooleanColumn;\nuse InertiaResource\Columns\GenericColumn;\nuse InertiaResource\FormFields\TextField;\nuse InertiaResource\FormFields\NumberField;\nuse InertiaResource\FormFields\ToggleField;\nuse InertiaResource\FormFields\SelectField;",
+                $stub
+            );
+            
+            // Generate columns
+            $columnsSection = "                TextColumn::make('id', 'ID'),\n";
+            $columnsSection .= "                GenericColumn::make('menu_group_id', 'Menu Group'),\n";
+            $columnsSection .= "                GenericColumn::make('parent_id', 'Parent'),\n";
+            $columnsSection .= "                TextColumn::make('key', 'Key'),\n";
+            $columnsSection .= "                TextColumn::make('label', 'Label'),\n";
+            $columnsSection .= "                TextColumn::make('url', 'URL'),\n";
+            $columnsSection .= "                TextColumn::make('route', 'Route'),\n";
+            $columnsSection .= "                TextColumn::make('icon', 'Icon'),\n";
+            $columnsSection .= "                TextColumn::make('permission_name', 'Permission'),\n";
+            $columnsSection .= "                GenericColumn::make('sort_order', 'Sort Order'),\n";
+            $columnsSection .= "                BooleanColumn::make('is_active', 'Active'),\n";
+            $columnsSection .= "                BooleanColumn::make('is_group_header', 'Group Header'),\n";
+            $columnsSection .= "                // Add your columns here";
+            
+            $stub = preg_replace(
+                "/TextColumn::make\('id', 'ID'\),\s*\n\s*\/\/ Add your columns here/",
+                $columnsSection,
+                $stub
+            );
+            
+            // Generate form fields
+            $formFieldsSection = "            SelectField::make('menu_group_id', 'Menu Group')\n";
+            $formFieldsSection .= "                ->options([])\n";
+            $formFieldsSection .= "                ->required(),\n";
+            $formFieldsSection .= "            SelectField::make('parent_id', 'Parent')\n";
+            $formFieldsSection .= "                ->options([]),\n";
+            $formFieldsSection .= "            TextField::make('key', 'Key')->required(),\n";
+            $formFieldsSection .= "            TextField::make('label', 'Label')->required(),\n";
+            $formFieldsSection .= "            TextField::make('url', 'URL'),\n";
+            $formFieldsSection .= "            TextField::make('route', 'Route'),\n";
+            $formFieldsSection .= "            TextField::make('icon', 'Icon'),\n";
+            $formFieldsSection .= "            TextField::make('permission_name', 'Permission'),\n";
+            $formFieldsSection .= "            NumberField::make('sort_order', 'Sort Order')->default(0),\n";
+            $formFieldsSection .= "            ToggleField::make('is_active', 'Active')->default(true),\n";
+            $formFieldsSection .= "            ToggleField::make('is_group_header', 'Group Header')->default(false),";
+            
+            $stub = preg_replace(
+                "/\/\/ Add your form fields here\s*\n\s*\/\/ TextField::make\('name', 'Name'\)->required\(\),/",
+                $formFieldsSection,
+                $stub
+            );
+        }
+
         File::put($filePath, $stub);
         $this->info("✅ Created {$resourceName}.php");
     }
@@ -145,7 +236,7 @@ class CreateInertiaResourceCommand extends Command
         $filePath = "{$path}/{$controllerName}.php";
 
         if (File::exists($filePath)) {
-            if (!$this->confirm("Controller file {$controllerName}.php already exists. Overwrite?", false)) {
+            if (!$this->confirm("Controller file {$controllerName}.php already exists. Overwrite?", true)) {
                 $this->warn("Skipped {$controllerName}.php");
                 return;
             }
@@ -275,7 +366,7 @@ class CreateInertiaResourceCommand extends Command
             $filePath = "{$vuePath}/{$fileName}";
 
             if (File::exists($filePath)) {
-                if (!$this->confirm("Vue file {$fileName} already exists. Overwrite?", false)) {
+                if (!$this->confirm("Vue file {$fileName} already exists. Overwrite?", true)) {
                     $this->warn("Skipped {$fileName}");
                     continue;
                 }
