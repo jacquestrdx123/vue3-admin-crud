@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.40] - 2024-12-04
+
+### Added
+
+- Added complete Ziggy setup for Laravel/Inertia/Vite/Vue integration
+- Added `tightenco/ziggy` as required dependency in composer.json
+- Added `ziggy-js` alias to vite.config.js.stub pointing to vendor path
+- Imported and registered ZiggyVue plugin in app.js.stub for global route helper
+
+### Fixed
+
+- Fixed `@routes` directive to use `@routes()` with parentheses for proper Blade directive recognition
+- Ensured Ziggy route helper is globally available in all Vue components without individual imports
+
 ## [2.4.39] - 2024-12-XX
 
 ### Fixed
