@@ -92,7 +92,7 @@ const getStoreRoute = () => {
     }
     return null
   }
-  return `vue.${props.resourceSlug}.store`
+  return `admin.${props.resourceSlug}.store`
 }
 
 const getIndexRoute = () => {
@@ -107,7 +107,7 @@ const getIndexRoute = () => {
     }
     return '#'
   }
-  return route(`vue.${props.resourceSlug}.index`)
+  return route(`admin.${props.resourceSlug}.index`)
 }
 
 const submit = () => {

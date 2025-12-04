@@ -77,8 +77,8 @@ const getRouteName = (action) => {
     return null
   }
   
-  // Convert slug to route name (e.g., 'menu-items' -> 'vue.menu-items')
-  const routePrefix = 'vue.'
+  // Convert slug to route name (e.g., 'menu-items' -> 'admin.menu-items')
+  const routePrefix = 'admin.'
   return `${routePrefix}${props.resourceSlug}.${action}`
 }
 

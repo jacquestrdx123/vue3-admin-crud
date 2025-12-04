@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.42] - 2024-12-04
+
+### Fixed
+
+- Fixed incorrect route prefix in resource Vue components (Create, Edit, Index, Show)
+- Changed route prefix from `vue.` to `admin.` to match actual route names
+- Routes now correctly use `admin.users.index` instead of `vue.users.index`
+- Fixed route generation in all resource stub files and existing resource components
+
 ## [2.4.41] - 2024-12-04
 
 ### Added

@@ -101,7 +101,7 @@ const getDestroyRoute = () => {
     }
     return null
   }
-  return `vue.${props.resourceSlug}.destroy`
+  return `admin.${props.resourceSlug}.destroy`
 }
 
 const getEditRoute = () => {
@@ -116,7 +116,7 @@ const getEditRoute = () => {
     }
     return '#'
   }
-  return route(`vue.${props.resourceSlug}.edit`, props.item.id)
+  return route(`admin.${props.resourceSlug}.edit`, props.item.id)
 }
 
 const deleteItem = () => {

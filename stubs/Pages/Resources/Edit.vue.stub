@@ -93,7 +93,7 @@ const getUpdateRoute = () => {
     }
     return null
   }
-  return `vue.${props.resourceSlug}.update`
+  return `admin.${props.resourceSlug}.update`
 }
 
 const getIndexRoute = () => {
@@ -108,7 +108,7 @@ const getIndexRoute = () => {
     }
     return '#'
   }
-  return route(`vue.${props.resourceSlug}.index`)
+  return route(`admin.${props.resourceSlug}.index`)
 }
 
 const submit = () => {
