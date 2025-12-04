@@ -133,7 +133,7 @@ This package includes Ziggy for Laravel route helpers in Vue. The setup is autom
 4. **Check your JavaScript entry point** - Ensure `resources/js/app.js` includes ZiggyVue:
 
    ```javascript
-   import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/vue.es.js';
+   import { ZiggyVue } from "../../vendor/tightenco/ziggy/dist/vue.es.js";
 
    createInertiaApp({
      setup({ el, App, props, plugin }) {
@@ -150,13 +150,13 @@ This package includes Ziggy for Laravel route helpers in Vue. The setup is autom
 5. **If you see "ziggy-js could not be resolved" error in Vite:**
 
    This error should not occur with the direct import path. If you see it:
-   
+
    - Verify Ziggy is installed via Composer: `composer show tightenco/ziggy`
-   
+
    - Verify the file exists: `ls -la vendor/tightenco/ziggy/dist/vue.es.js`
-   
+
    - Make sure `vendor/tightenco/ziggy` exists - if not, run `composer install`
-   
+
    - Ensure your `app.js` uses the direct import path (not an alias)
 
 ## Updating the Package

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.45] - 2024-12-04
+
+### Added
+
+- Added `resourceSlug` and `title` props to all resource pages (Create, Edit, Show, Index)
+- All resource pages now receive complete context from the resource definition
+- Ensures all fields from resource definition are properly available in Vue components
+
+### Improved
+
+- BaseResourceController now passes `resourceSlug` to Create, Edit, and Show methods
+- BaseResourceController now passes `title` to Index, Create, Edit, and Show methods
+- Resource Vue components now have consistent access to resource metadata
+
 ## [2.4.44] - 2024-12-04
 
 ### Fixed

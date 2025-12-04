@@ -263,6 +263,7 @@ abstract class BaseResourceController extends \Illuminate\Routing\Controller
             'presetViews' => $resource::getPresetViews(),
             'activePresets' => $activePresets,
             'resourceSlug' => $resource->getSlug(),
+            'title' => $resource::getTitle(),
         ]);
     }
 
@@ -273,6 +274,8 @@ abstract class BaseResourceController extends \Illuminate\Routing\Controller
 
         return Inertia::render($resource->getCreatePage(), [
             'fields' => $resource->getFormFields(),
+            'resourceSlug' => $resource->getSlug(),
+            'title' => $resource::getTitle(),
         ]);
     }
 
@@ -305,6 +308,8 @@ abstract class BaseResourceController extends \Illuminate\Routing\Controller
         return Inertia::render($resource->getShowPage(), [
             'item' => $record,
             'fields' => $resource->getFormFields(),
+            'resourceSlug' => $resource->getSlug(),
+            'title' => $resource::getTitle(),
             'current_tab' => $currentTab,
             'tab_data' => $tabData,
         ]);
@@ -332,6 +337,8 @@ abstract class BaseResourceController extends \Illuminate\Routing\Controller
         return Inertia::render($resource->getEditPage(), [
             'item' => $record,
             'fields' => $resource->getFormFields(),
+            'resourceSlug' => $resource->getSlug(),
+            'title' => $resource::getTitle(),
         ]);
     }
 
