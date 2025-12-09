@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.49] - 2024-12-04
+
+### Added
+
+- Added automatic menu item creation for User and Customer resources during install process
+- Install command now checks if UserResource and CustomerResource exist and creates menu items for them in the Administration group
+- Menu items are automatically created with proper routes, labels, and sort order when resources are detected
+
 ## [2.4.48] - 2024-12-04
 
 ### Fixed

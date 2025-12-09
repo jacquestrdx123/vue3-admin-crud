@@ -1907,6 +1907,10 @@ CSS;
 
         $this->newLine();
         $this->info('✅ Menu system setup complete!');
+        
+        // Create menu items for User and Customer resources if they exist
+        $this->createResourceMenuItems();
+        
         $this->newLine();
         $this->comment('📋 Next steps:');
         if ($needsMigrations) {
@@ -1922,6 +1926,119 @@ CSS;
                 $this->warn('   ⚠️  Note: Some routes may need to be added manually to routes/admin.php');
             }
         }
+    }
+
+    /**
+     * Create menu items for User and Customer resources if they exist
+     */
+    protected function createResourceMenuItems(): void
+    {
+        // Check if menu tables exist
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('menu_groups') || 
+                !\Illuminate\Support\Facades\Schema::hasTable('menu_items')) {
+                $this->comment('ℹ️  Menu tables not found. Skipping resource menu item creation.');
+                return;
+            }
+        } catch (\Exception $e) {
+            $this->comment('ℹ️  Could not check menu tables. Skipping resource menu item creation.');
+            return;
+        }
+
+        // Check if MenuGroup and MenuItem models exist
+        if (!class_exists('App\\Models\\MenuGroup') || !class_exists('App\\Models\\MenuItem')) {
+            $this->comment('ℹ️  Menu models not found. Skipping resource menu item creation.');
+            return;
+        }
+
+        $appNamespace = $this->getAppNamespace();
+        $resourceNamespace = $appNamespace . 'Support\\Inertia\\Resources';
+
+        // Create or get "Administration" menu group
+        $adminGroup = \App\Models\MenuGroup::firstOrCreate(
+            ['key' => 'administration'],
+            [
+                'label' => 'Administration',
+                'sort_order' => 1,
+                'is_active' => true,
+            ]
+        );
+
+        $sortOrder = 1;
+
+        // Check for UserResource
+        $userResourceClass = $resourceNamespace . '\\UserResource';
+        if (class_exists($userResourceClass)) {
+            try {
+                $userSlug = $userResourceClass::getSlug();
+                $userTitle = $userResourceClass::getTitle() ?? 'Users';
+                
+                if ($userSlug) {
+                    \App\Models\MenuItem::firstOrCreate(
+                        [
+                            'menu_group_id' => $adminGroup->id,
+                            'key' => $userSlug,
+                        ],
+                        [
+                            'label' => $userTitle,
+                            'route' => "admin.{$userSlug}.index",
+                            'sort_order' => $sortOrder++,
+                            'is_active' => true,
+                            'parent_id' => null,
+                        ]
+                    );
+                    $this->info("✅ Created menu item for {$userTitle} in Administration group.");
+                }
+            } catch (\Exception $e) {
+                $this->warn("⚠️  Could not create menu item for UserResource: " . $e->getMessage());
+            }
+        }
+
+        // Check for CustomerResource
+        $customerResourceClass = $resourceNamespace . '\\CustomerResource';
+        if (class_exists($customerResourceClass)) {
+            try {
+                $customerSlug = $customerResourceClass::getSlug();
+                $customerTitle = $customerResourceClass::getTitle() ?? 'Customers';
+                
+                if ($customerSlug) {
+                    \App\Models\MenuItem::firstOrCreate(
+                        [
+                            'menu_group_id' => $adminGroup->id,
+                            'key' => $customerSlug,
+                        ],
+                        [
+                            'label' => $customerTitle,
+                            'route' => "admin.{$customerSlug}.index",
+                            'sort_order' => $sortOrder++,
+                            'is_active' => true,
+                            'parent_id' => null,
+                        ]
+                    );
+                    $this->info("✅ Created menu item for {$customerTitle} in Administration group.");
+                }
+            } catch (\Exception $e) {
+                $this->warn("⚠️  Could not create menu item for CustomerResource: " . $e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Get the application namespace
+     */
+    protected function getAppNamespace(): string
+    {
+        $composer = json_decode(File::get(base_path('composer.json')), true);
+        
+        foreach ((array) data_get($composer, 'autoload.psr-4') as $namespace => $path) {
+            foreach ((array) $path as $pathChoice) {
+                if (realpath(app_path()) === realpath(base_path($pathChoice))) {
+                    return $namespace;
+                }
+            }
+        }
+
+        return 'App\\';
     }
 
     /**
