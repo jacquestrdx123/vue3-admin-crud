@@ -43,6 +43,7 @@ class InertiaResourceServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \InertiaResource\Console\InstallCommand::class,
+                \InertiaResource\Console\UninstallCommand::class,
                 \InertiaResource\Console\ForceReinstallCommand::class,
                 \InertiaResource\Console\CreateInertiaResourceCommand::class,
                 \InertiaResource\Console\CreateUserModelCommand::class,
