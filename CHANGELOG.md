@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.50] - 2024-12-04
+
+### Added
+
+- Updated AdminLayout to use menu groups and items from MenuBuilder
+- AdminLayout now displays dynamic menu structure from database
+- Added support for nested menu items with collapsible sections
+- Menu items are automatically displayed based on MenuBuilder::build() data
+- Added icon support for heroicons in menu items
+- Menu groups are displayed as section headers in the sidebar
+- Auto-expand menu items when current page matches child items
+
+### Changed
+
+- AdminLayout navigation now uses database-driven menu system instead of hardcoded items
+- Menu items support hierarchical structure with parent/child relationships
+
 ## [2.4.49] - 2024-12-04
 
 ### Added
