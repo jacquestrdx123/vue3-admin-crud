@@ -8,7 +8,7 @@ composer.lock
 .phpunit.result.cache
 coverage/
 .php-cs-fixer.cache
-
+fresh-laravel-12
 # Build artifacts
 /node_modules/
 /build/

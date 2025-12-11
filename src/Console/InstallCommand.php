@@ -36,6 +36,13 @@ class InstallCommand extends Command
     protected $shouldCreateCustomerResource = false;
 
     /**
+     * Whether to add enhanced fields (first_name, last_name, email, mobile_number) to User and Customer models
+     *
+     * @var bool
+     */
+    protected $useEnhancedFields = false;
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
@@ -52,6 +59,17 @@ class InstallCommand extends Command
         $this->updateCustomersConfig($useCustomers);
         $this->newLine();
 
+        // Ask if user wants enhanced fields for User and Customer models
+        $this->info('📋 Enhanced Fields Option');
+        $this->comment('   You can add the following fields to User and Customer models:');
+        $this->comment('   - first_name');
+        $this->comment('   - last_name');
+        $this->comment('   - email');
+        $this->comment('   - mobile_number');
+        $this->newLine();
+        $this->useEnhancedFields = $this->confirm('Do you want to add these enhanced fields to User and Customer models?', false);
+        $this->newLine();
+
         // Merge package.json dependencies
         $this->info('📦 Merging npm dependencies...');
         $this->mergePackageJson();
@@ -62,12 +80,14 @@ class InstallCommand extends Command
         $this->publishTailwindConfig();
         $this->newLine();
 
-        // Publish all assets
+        // Publish all assets (but check migrations first to avoid duplicates)
         $this->info('📁 Publishing package assets...');
-        $this->call('vendor:publish', [
-            '--tag' => 'inertia-resource',
-            '--force' => false,
-        ]);
+        $this->publishAssetsSafely();
+        $this->newLine();
+
+        // Run migrations
+        $this->info('🔄 Running database migrations...');
+        $this->runMigrations();
         $this->newLine();
 
         // Create Inertia root template
@@ -145,6 +165,39 @@ class InstallCommand extends Command
         $userResourceCreated = false;
         $customerResourceCreated = false;
         
+        // Check User model and migration
+        $this->info('👤 Checking User model and migration...');
+        $userModelExists = $this->checkUserModelExists();
+        $userMigrationExists = $this->checkMigrationExists('create_users_table');
+        
+        if (!$userModelExists) {
+            $this->warn('⚠️  User model not found.');
+            if ($this->confirm('Do you want to create the User model?', true)) {
+                $this->createUserModel();
+                if ($this->useEnhancedFields) {
+                    $this->updateUserModel();
+                }
+            }
+        } else {
+            $this->comment('ℹ️  User model already exists.');
+            if ($this->useEnhancedFields) {
+                $this->updateUserModel();
+            }
+        }
+        
+        if (!$userMigrationExists) {
+            $this->warn('⚠️  User migration not found.');
+            if ($this->confirm('Do you want to create the User migration?', true)) {
+                $this->createUserMigration();
+            }
+        } else {
+            $this->comment('ℹ️  User migration already exists.');
+            if ($this->useEnhancedFields) {
+                $this->updateUserMigration();
+            }
+        }
+        $this->newLine();
+        
         // Ask if user wants to create the initial User Resource
         if ($this->confirm('Do you want to create a Resource for the User model?', true)) {
             $this->info('📦 Creating User Resource...');
@@ -174,6 +227,9 @@ class InstallCommand extends Command
                 ]);
                 $this->newLine();
                 $userResourceCreated = true;
+                if ($this->useEnhancedFields) {
+                    $this->updateUserResource();
+                }
             }
         }
 
@@ -197,6 +253,9 @@ class InstallCommand extends Command
                 ]);
                 $this->newLine();
                 $customerResourceCreated = true;
+                if ($this->useEnhancedFields) {
+                    $this->updateCustomerResource($this->customerModel);
+                }
             } else {
                 $this->warn("⚠️  Customer model '{$this->customerModel}' not found. Skipping Customer Resource creation.");
                 $this->comment("   Please create the Customer Resource manually: php artisan make:inertia-resource \"{$this->customerModel}\" --all");
@@ -228,6 +287,102 @@ class InstallCommand extends Command
         $this->comment('3. Start your development server: npm run dev');
         
         return 0;
+    }
+
+    /**
+     * Publish assets safely, checking for existing migrations first
+     */
+    protected function publishAssetsSafely(): void
+    {
+        $migrationsPath = database_path('migrations');
+        
+        // Check if package migrations already exist
+        $userColumnPrefsMigration = glob($migrationsPath . '/*_create_user_column_preferences_table.php');
+        $menuGroupsMigration = glob($migrationsPath . '/*_create_menu_groups_table.php');
+        $menuItemsMigration = glob($migrationsPath . '/*_create_menu_items_table.php');
+        
+        $hasAllMigrations = !empty($userColumnPrefsMigration) && 
+                           !empty($menuGroupsMigration) && 
+                           !empty($menuItemsMigration);
+        
+        if ($hasAllMigrations) {
+            $this->comment('   ℹ️  Package migrations already exist. Skipping migration publishing.');
+            $this->comment('   ℹ️  Publishing other assets only...');
+            
+            // Publish everything except migrations
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-config',
+                '--force' => false,
+            ]);
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-components',
+                '--force' => false,
+            ]);
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-tailwind',
+                '--force' => false,
+            ]);
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-vite',
+                '--force' => false,
+            ]);
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-assets',
+                '--force' => false,
+            ]);
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-login-pages',
+                '--force' => false,
+            ]);
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-layouts',
+                '--force' => false,
+            ]);
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource-menu-models',
+                '--force' => false,
+            ]);
+        } else {
+            // Publish everything including migrations
+            $this->call('vendor:publish', [
+                '--tag' => 'inertia-resource',
+                '--force' => false,
+            ]);
+        }
+    }
+
+    /**
+     * Run database migrations
+     */
+    protected function runMigrations(): void
+    {
+        try {
+            // Check if migrations table exists (database is set up)
+            if (!\Illuminate\Support\Facades\Schema::hasTable('migrations')) {
+                $this->comment('ℹ️  Migrations table does not exist. Running initial migrations...');
+            }
+            
+            // Check if there are pending migrations
+            $this->call('migrate', ['--force' => true]);
+            $this->info('✅ Migrations completed successfully.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Check if error is about table already existing
+            if (str_contains($e->getMessage(), 'already exists')) {
+                $this->warn('⚠️  Some tables already exist in the database.');
+                $this->comment('   This usually means migrations were run before but not recorded in the migrations table.');
+                $this->comment('   You may need to manually mark migrations as run or reset the database.');
+                $this->newLine();
+                $this->comment('   Options:');
+                $this->comment('   1. Reset database: php artisan migrate:fresh');
+                $this->comment('   2. Mark migrations as run: php artisan migrate --pretend (then manually insert into migrations table)');
+            } else {
+                $this->warn('⚠️  Migration error: ' . $e->getMessage());
+                $this->comment('   You may need to run migrations manually: php artisan migrate');
+            }
+        } catch (\Exception $e) {
+            $this->warn('⚠️  Migration error: ' . $e->getMessage());
+            $this->comment('   You may need to run migrations manually: php artisan migrate');
+        }
     }
 
     /**
@@ -279,10 +434,6 @@ class InstallCommand extends Command
                     $customerModel = $defaultCustomerModel;
                 }
                 
-                // Create the customer model
-                $this->info('📦 Creating Customer model...');
-                $this->newLine();
-                
                 // Extract model name and namespace
                 $modelParts = explode('\\', $customerModel);
                 $modelName = end($modelParts);
@@ -300,9 +451,19 @@ class InstallCommand extends Command
                 }
                 
                 // Check if model already exists
-                if (class_exists($customerModel)) {
-                    $this->warn("⚠️  Customer model '{$customerModel}' already exists. Skipping model creation.");
+                $modelExists = class_exists($customerModel) || File::exists($modelPath);
+                $migrationExists = $this->checkMigrationExists('create_' . strtolower($modelName) . 's_table');
+                
+                if ($modelExists) {
+                    $this->comment("ℹ️  Customer model '{$customerModel}' already exists.");
+                    // Update existing model with enhanced fields if enabled
+                    if ($this->useEnhancedFields) {
+                        $this->updateCustomerModel($customerModel);
+                    }
                 } else {
+                    // Create the customer model
+                    $this->info('📦 Creating Customer model...');
+                    $this->newLine();
                     // Create model directory if needed
                     $modelDir = dirname($modelPath);
                     if (!File::exists($modelDir)) {
@@ -324,9 +485,16 @@ class InstallCommand extends Command
                     $modelStub .= "     * @var array<int, string>\n";
                     $modelStub .= "     */\n";
                     $modelStub .= "    protected \$fillable = [\n";
-                    $modelStub .= "        'name',\n";
-                    $modelStub .= "        'email',\n";
-                    $modelStub .= "        'password',\n";
+                    if ($this->useEnhancedFields) {
+                        $modelStub .= "        'first_name',\n";
+                        $modelStub .= "        'last_name',\n";
+                        $modelStub .= "        'email',\n";
+                        $modelStub .= "        'mobile_number',\n";
+                    } else {
+                        $modelStub .= "        'name',\n";
+                        $modelStub .= "        'email',\n";
+                        $modelStub .= "        'password',\n";
+                    }
                     $modelStub .= "    ];\n\n";
                     $modelStub .= "    /**\n";
                     $modelStub .= "     * The attributes that should be hidden for serialization.\n";
@@ -361,6 +529,20 @@ class InstallCommand extends Command
                     }
                     // Give autoloader a moment to catch up
                     usleep(500000); // 0.5 seconds
+                    
+                    // Note: Enhanced fields are already included in the model stub if enabled
+                    // No need to update here since we built it with enhanced fields
+                }
+                
+                // Check and create migration if needed
+                if (!$migrationExists) {
+                    $this->info('📦 Creating Customer migration...');
+                    $this->createCustomerMigration($modelName);
+                } else {
+                    $this->comment("ℹ️  Customer migration already exists.");
+                    if ($this->useEnhancedFields) {
+                        $this->updateCustomerMigration($modelName);
+                    }
                 }
                 
                 // Update config with customer model
@@ -1264,6 +1446,9 @@ CSS;
             File::makeDirectory($middlewarePath, 0755, true);
         }
         
+        // Create HandleInertiaRequests middleware if it doesn't exist
+        $this->createHandleInertiaRequestsMiddleware();
+        
         // Create AuthenticateAdmin middleware
         $authenticateAdminPath = "{$middlewarePath}/AuthenticateAdmin.php";
         if (!File::exists($authenticateAdminPath)) {
@@ -1278,6 +1463,95 @@ CSS;
             $stub = File::get(__DIR__.'/../../stubs/Middleware/RedirectIfAuthenticatedAdmin.stub');
             File::put($redirectIfAuthAdminPath, $stub);
             $this->info('✅ Created RedirectIfAuthenticatedAdmin middleware');
+        }
+    }
+
+    /**
+     * Create HandleInertiaRequests middleware if it doesn't exist
+     */
+    protected function createHandleInertiaRequestsMiddleware(): void
+    {
+        $middlewarePath = app_path('Http/Middleware');
+        
+        if (!File::exists($middlewarePath)) {
+            File::makeDirectory($middlewarePath, 0755, true);
+        }
+        
+        $handleInertiaPath = "{$middlewarePath}/HandleInertiaRequests.php";
+        $wasCreated = false;
+        
+        if (!File::exists($handleInertiaPath)) {
+            $stubPath = __DIR__.'/../../stubs/Middleware/HandleInertiaRequests.stub';
+            if (File::exists($stubPath)) {
+                $stub = File::get($stubPath);
+                File::put($handleInertiaPath, $stub);
+                $this->info('✅ Created HandleInertiaRequests middleware');
+                $wasCreated = true;
+            } else {
+                $this->warn('⚠️  HandleInertiaRequests.stub not found. Skipping middleware creation.');
+            }
+        } else {
+            $this->comment('ℹ️  HandleInertiaRequests middleware already exists. Skipping creation.');
+        }
+        
+        // Register middleware in bootstrap/app.php if it was created or if not registered
+        if ($wasCreated || File::exists($handleInertiaPath)) {
+            $this->registerHandleInertiaRequestsMiddleware();
+        }
+    }
+
+    /**
+     * Register HandleInertiaRequests middleware in bootstrap/app.php
+     */
+    protected function registerHandleInertiaRequestsMiddleware(): void
+    {
+        $bootstrapAppPath = base_path('bootstrap/app.php');
+        
+        if (!File::exists($bootstrapAppPath)) {
+            $this->warn('⚠️  bootstrap/app.php not found. Please register HandleInertiaRequests middleware manually.');
+            return;
+        }
+        
+        $content = File::get($bootstrapAppPath);
+        
+        // Check if middleware is already registered
+        if (strpos($content, 'HandleInertiaRequests') !== false) {
+            $this->comment('ℹ️  HandleInertiaRequests middleware already registered in bootstrap/app.php');
+            return;
+        }
+        
+        // Check if withMiddleware block exists and is empty or has content
+        $middlewarePattern = '/->withMiddleware\s*\(\s*function\s*\(Middleware\s+\$middleware\):\s*void\s*\{([^}]*)\}\s*\)/s';
+        
+        if (preg_match($middlewarePattern, $content, $matches)) {
+            $middlewareBlock = $matches[1];
+            
+            // Check if it's empty (just whitespace/comments)
+            if (trim($middlewareBlock) === '' || trim($middlewareBlock) === '//') {
+                // Empty block - add middleware registration
+                $replacement = "->withMiddleware(function (Middleware \$middleware): void {\n        \$middleware->web(append: [\n            \\App\\Http\\Middleware\\HandleInertiaRequests::class,\n        ]);\n    })";
+                $content = preg_replace($middlewarePattern, $replacement, $content);
+            } else {
+                // Has content - append to existing
+                if (strpos($middlewareBlock, '->web(') !== false) {
+                    // Append to existing web() call
+                    $content = preg_replace(
+                        '/(\$middleware->web\([^)]*)\)/',
+                        '$1, \\App\\Http\\Middleware\\HandleInertiaRequests::class)',
+                        $content
+                    );
+                } else {
+                    // Add new web() call
+                    $replacement = "->withMiddleware(function (Middleware \$middleware): void {\n        \$middleware->web(append: [\n            \\App\\Http\\Middleware\\HandleInertiaRequests::class,\n        ]);\n{$middlewareBlock}\n    })";
+                    $content = preg_replace($middlewarePattern, $replacement, $content);
+                }
+            }
+            
+            File::put($bootstrapAppPath, $content);
+            $this->info('✅ Registered HandleInertiaRequests middleware in bootstrap/app.php');
+        } else {
+            $this->warn('⚠️  Could not find withMiddleware block in bootstrap/app.php. Please register HandleInertiaRequests middleware manually:');
+            $this->line('   $middleware->web(append: [\\App\\Http\\Middleware\\HandleInertiaRequests::class]);');
         }
     }
     
@@ -1800,11 +2074,11 @@ CSS;
     protected function createMenuSystem(): void
     {
         // Step 1: Check if migrations exist before creating them
-        $migrationsPath = database_path('migrations');
-        $menuGroupsMigration = glob($migrationsPath . '/*_create_menu_groups_table.php');
-        $menuItemsMigration = glob($migrationsPath . '/*_create_menu_items_table.php');
+        $menuGroupsMigrationExists = $this->checkMigrationExists('create_menu_groups_table');
+        $menuItemsMigrationExists = $this->checkMigrationExists('create_menu_items_table');
+        $userColumnPrefsMigrationExists = $this->checkMigrationExists('create_user_column_preferences_table');
 
-        $needsMigrations = empty($menuGroupsMigration) || empty($menuItemsMigration);
+        $needsMigrations = !$menuGroupsMigrationExists || !$menuItemsMigrationExists || !$userColumnPrefsMigrationExists;
 
         if ($needsMigrations) {
             // Publish migrations if they don't exist
@@ -2130,5 +2404,463 @@ CSS;
             $this->warn("⚠️  Could not run {$seederClass}: " . $e->getMessage());
             $this->comment("   Please run manually: php artisan db:seed --class={$seederClass}");
         }
+    }
+
+    /**
+     * Check if a migration exists
+     */
+    protected function checkMigrationExists(string $migrationName): bool
+    {
+        $migrationsPath = database_path('migrations');
+        $pattern = $migrationsPath . '/*_' . $migrationName . '.php';
+        $migrations = glob($pattern);
+        return !empty($migrations);
+    }
+
+    /**
+     * Check if User model exists
+     */
+    protected function checkUserModelExists(): bool
+    {
+        $userModel = 'App\\Models\\User';
+        if (class_exists($userModel)) {
+            return true;
+        }
+        
+        $userModel = 'App\\User';
+        if (class_exists($userModel)) {
+            return true;
+        }
+        
+        // Check if file exists
+        $modelPath = app_path('Models/User.php');
+        if (File::exists($modelPath)) {
+            return true;
+        }
+        
+        $modelPath = app_path('User.php');
+        if (File::exists($modelPath)) {
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Create User model
+     */
+    protected function createUserModel(): void
+    {
+        $modelPath = app_path('Models/User.php');
+        $modelDir = app_path('Models');
+        
+        if (!File::exists($modelDir)) {
+            File::makeDirectory($modelDir, 0755, true);
+        }
+        
+        if (File::exists($modelPath)) {
+            $this->comment('ℹ️  User model already exists.');
+            return;
+        }
+        
+        $this->call('make:model', [
+            'name' => 'User',
+        ]);
+        
+        $this->info('✅ Created User model.');
+    }
+
+    /**
+     * Create User migration
+     */
+    protected function createUserMigration(): void
+    {
+        if ($this->checkMigrationExists('create_users_table')) {
+            $this->comment('ℹ️  User migration already exists.');
+            if ($this->useEnhancedFields) {
+                $this->updateUserMigration();
+            }
+            return;
+        }
+        
+        $this->call('make:migration', [
+            'name' => 'create_users_table',
+        ]);
+        
+        $this->info('✅ Created User migration.');
+        
+        if ($this->useEnhancedFields) {
+            $this->updateUserMigration();
+        } else {
+            $this->comment('   Note: You may need to customize the migration file.');
+        }
+    }
+
+    /**
+     * Create Customer migration
+     */
+    protected function createCustomerMigration(string $modelName): void
+    {
+        $tableName = strtolower($modelName) . 's';
+        $migrationName = 'create_' . $tableName . '_table';
+        
+        if ($this->checkMigrationExists($migrationName)) {
+            $this->comment("ℹ️  Customer migration already exists.");
+            if ($this->useEnhancedFields) {
+                $this->updateCustomerMigration($modelName);
+            }
+            return;
+        }
+        
+        $this->call('make:migration', [
+            'name' => $migrationName,
+        ]);
+        
+        $this->info("✅ Created Customer migration: {$migrationName}");
+        
+        if ($this->useEnhancedFields) {
+            $this->updateCustomerMigration($modelName);
+        } else {
+            $this->comment('   Note: You may need to customize the migration file.');
+        }
+    }
+
+    /**
+     * Update User migration with enhanced fields
+     */
+    protected function updateUserMigration(): void
+    {
+        $migrationFiles = glob(database_path('migrations/*_create_users_table.php'));
+        if (empty($migrationFiles)) {
+            return;
+        }
+        
+        $migrationFile = $migrationFiles[0];
+        $content = File::get($migrationFile);
+        
+        // Check if fields already exist
+        if (strpos($content, "first_name") !== false) {
+            $this->comment('   ℹ️  Enhanced fields already exist in User migration.');
+            return;
+        }
+        
+        // Find the Schema::create block and add fields
+        // Look for the id() line and add fields after it, before timestamps
+        if (preg_match('/(\$table->id\(\);)/', $content, $matches)) {
+            $enhancedFields = 
+                "            \$table->id();\n" .
+                "            \$table->string('first_name');\n" .
+                "            \$table->string('last_name');\n" .
+                "            \$table->string('email')->unique();\n" .
+                "            \$table->string('mobile_number')->nullable();\n" .
+                "            \$table->timestamp('email_verified_at')->nullable();\n" .
+                "            \$table->string('password');\n" .
+                "            \$table->rememberToken();\n";
+            
+            // Replace id() with enhanced fields, then look for timestamps
+            $content = preg_replace('/\$table->id\(\);/', $enhancedFields, $content, 1);
+            
+            // Remove duplicate timestamps if they exist
+            $content = preg_replace('/\$table->timestamps\(\);\s*\$table->timestamps\(\);/', '$table->timestamps();', $content);
+        } else {
+            // Fallback: try to find where to insert before timestamps
+            $pattern = '/(function\s*\(Blueprint\s+\$table\)\s*\{[\s\S]*?)(\$table->timestamps\(\);)/';
+            $replacement = '$1' . 
+                "            \$table->string('first_name');\n" .
+                "            \$table->string('last_name');\n" .
+                "            \$table->string('email')->unique();\n" .
+                "            \$table->string('mobile_number')->nullable();\n" .
+                "            \$table->timestamp('email_verified_at')->nullable();\n" .
+                "            \$table->string('password');\n" .
+                "            \$table->rememberToken();\n" .
+                '            $2';
+            
+            $content = preg_replace($pattern, $replacement, $content);
+        }
+        
+        File::put($migrationFile, $content);
+        $this->info('   ✅ Added enhanced fields to User migration.');
+    }
+
+    /**
+     * Update Customer migration with enhanced fields
+     */
+    protected function updateCustomerMigration(string $modelName): void
+    {
+        $tableName = strtolower($modelName) . 's';
+        $migrationFiles = glob(database_path("migrations/*_create_{$tableName}_table.php"));
+        if (empty($migrationFiles)) {
+            return;
+        }
+        
+        $migrationFile = $migrationFiles[0];
+        $content = File::get($migrationFile);
+        
+        // Check if fields already exist
+        if (strpos($content, "first_name") !== false) {
+            $this->comment("   ℹ️  Enhanced fields already exist in Customer migration.");
+            return;
+        }
+        
+        // Find the Schema::create block and add fields
+        // Look for the id() line and add fields after it, before timestamps
+        if (preg_match('/(\$table->id\(\);)/', $content, $matches)) {
+            $enhancedFields = 
+                "            \$table->id();\n" .
+                "            \$table->string('first_name');\n" .
+                "            \$table->string('last_name');\n" .
+                "            \$table->string('email')->unique();\n" .
+                "            \$table->string('mobile_number')->nullable();\n";
+            
+            // Replace id() with enhanced fields, then look for timestamps
+            $content = preg_replace('/\$table->id\(\);/', $enhancedFields, $content, 1);
+            
+            // Remove duplicate timestamps if they exist
+            $content = preg_replace('/\$table->timestamps\(\);\s*\$table->timestamps\(\);/', '$table->timestamps();', $content);
+        } else {
+            // Fallback: try to find where to insert before timestamps
+            $pattern = '/(function\s*\(Blueprint\s+\$table\)\s*\{[\s\S]*?)(\$table->timestamps\(\);)/';
+            $replacement = '$1' . 
+                "            \$table->string('first_name');\n" .
+                "            \$table->string('last_name');\n" .
+                "            \$table->string('email')->unique();\n" .
+                "            \$table->string('mobile_number')->nullable();\n" .
+                '            $2';
+            
+            $content = preg_replace($pattern, $replacement, $content);
+        }
+        
+        File::put($migrationFile, $content);
+        $this->info("   ✅ Added enhanced fields to Customer migration.");
+    }
+
+    /**
+     * Update User model with enhanced fields in fillable
+     */
+    protected function updateUserModel(): void
+    {
+        $modelPath = app_path('Models/User.php');
+        if (!File::exists($modelPath)) {
+            // Try alternative location
+            $modelPath = app_path('User.php');
+            if (!File::exists($modelPath)) {
+                return;
+            }
+        }
+        
+        $content = File::get($modelPath);
+        
+        // Check if fields already exist
+        if (strpos($content, "first_name") !== false) {
+            $this->comment('   ℹ️  Enhanced fields already exist in User model.');
+            return;
+        }
+        
+        // Update fillable array
+        $pattern = "/(protected\s+\$fillable\s*=\s*\[)([^\]]*)(\];)/s";
+        $replacement = '$1' . 
+            "\n        'first_name',\n" .
+            "        'last_name',\n" .
+            "        'email',\n" .
+            "        'mobile_number',\n" .
+            "        'password',\n" .
+            "        'email_verified_at',\n" .
+            '    $3';
+        
+        $content = preg_replace($pattern, $replacement, $content);
+        
+        File::put($modelPath, $content);
+        $this->info('   ✅ Added enhanced fields to User model.');
+    }
+
+    /**
+     * Update Customer model with enhanced fields in fillable
+     */
+    protected function updateCustomerModel(string $customerModel): void
+    {
+        if (!$customerModel) {
+            return;
+        }
+        
+        // Extract model name and namespace
+        $modelParts = explode('\\', $customerModel);
+        $modelName = end($modelParts);
+        $namespace = implode('\\', array_slice($modelParts, 0, -1));
+        
+        // Determine model path
+        if ($namespace === 'App\\Models' || $namespace === 'App') {
+            $modelPath = app_path('Models/' . $modelName . '.php');
+        } else {
+            $relativePath = str_replace('App\\', '', $namespace);
+            $relativePath = str_replace('\\', '/', $relativePath);
+            $modelPath = app_path($relativePath . '/' . $modelName . '.php');
+        }
+        
+        if (!File::exists($modelPath)) {
+            return;
+        }
+        
+        $content = File::get($modelPath);
+        
+        // Check if fields already exist
+        if (strpos($content, "first_name") !== false) {
+            $this->comment("   ℹ️  Enhanced fields already exist in Customer model.");
+            return;
+        }
+        
+        // Update fillable array
+        $pattern = "/(protected\s+\$fillable\s*=\s*\[)([^\]]*)(\];)/s";
+        $replacement = '$1' . 
+            "\n        'first_name',\n" .
+            "        'last_name',\n" .
+            "        'email',\n" .
+            "        'mobile_number',\n" .
+            '    $3';
+        
+        $content = preg_replace($pattern, $replacement, $content);
+        
+        File::put($modelPath, $content);
+        $this->info("   ✅ Added enhanced fields to Customer model.");
+    }
+
+    /**
+     * Update User Resource with enhanced columns and form fields
+     */
+    protected function updateUserResource(): void
+    {
+        $resourcePath = app_path('Support/Inertia/Resources/UserResource.php');
+        if (!File::exists($resourcePath)) {
+            return;
+        }
+        
+        $content = File::get($resourcePath);
+        
+        // Check if enhanced fields already exist
+        if (strpos($content, "first_name") !== false) {
+            $this->comment('   ℹ️  Enhanced fields already exist in User Resource.');
+            return;
+        }
+        
+        // Add imports if needed
+        if (strpos($content, "use InertiaResource\\FormFields\\TextField;") === false) {
+            $content = str_replace(
+                "use InertiaResource\\Columns\\TextColumn;",
+                "use InertiaResource\\Columns\\TextColumn;\nuse InertiaResource\\FormFields\\TextField;",
+                $content
+            );
+        }
+        
+        // Update columns in table() method - replace 'name' with enhanced fields
+        // The User resource has: id, name, email by default
+        // Replace the 'name' column with first_name, last_name, and add mobile_number after email
+        if (strpos($content, "TextColumn::make('name', 'Name')") !== false) {
+            // Replace name with first_name and last_name
+            $content = str_replace(
+                "                TextColumn::make('name', 'Name'),",
+                "                TextColumn::make('first_name', 'First Name'),\n                TextColumn::make('last_name', 'Last Name'),",
+                $content
+            );
+            // Add mobile_number after email
+            $content = str_replace(
+                "                TextColumn::make('email', 'EMAIL'),",
+                "                TextColumn::make('email', 'Email'),\n                TextColumn::make('mobile_number', 'Mobile Number'),",
+                $content
+            );
+        } else {
+            // Fallback: add enhanced fields after email
+            $columnsPattern = "/(TextColumn::make\('email', '[^']+'\),)/";
+            $columnsReplacement = '$1' . 
+                "\n                TextColumn::make('first_name', 'First Name'),\n" .
+                "                TextColumn::make('last_name', 'Last Name'),\n" .
+                "                TextColumn::make('mobile_number', 'Mobile Number'),";
+            $content = preg_replace($columnsPattern, $columnsReplacement, $content);
+        }
+        
+        // Update form fields in form() method
+        $formPattern = "/(\/\/ Add your form fields here[\s\S]*?)(\]\s*;)/";
+        if (preg_match($formPattern, $content)) {
+            $formReplacement = '$1' . 
+                "\n            TextField::make('first_name', 'First Name')->required(),\n" .
+                "            TextField::make('last_name', 'Last Name')->required(),\n" .
+                "            TextField::make('email', 'Email')->type('email')->required(),\n" .
+                "            TextField::make('mobile_number', 'Mobile Number'),\n" .
+                "            TextField::make('password', 'Password')->type('password'),\n" .
+                '        $2';
+            $content = preg_replace($formPattern, $formReplacement, $content);
+        } else {
+            // If no placeholder, add fields before the closing bracket
+            $formPattern2 = "/(return\s+\[)([\s\S]*?)(\]\s*;\s*}\s*public static function)/";
+            $formReplacement2 = '$1' . 
+                "\n            TextField::make('first_name', 'First Name')->required(),\n" .
+                "            TextField::make('last_name', 'Last Name')->required(),\n" .
+                "            TextField::make('email', 'Email')->type('email')->required(),\n" .
+                "            TextField::make('mobile_number', 'Mobile Number'),\n" .
+                "            TextField::make('password', 'Password')->type('password'),\n" .
+                '        $3';
+            $content = preg_replace($formPattern2, $formReplacement2, $content);
+        }
+        
+        File::put($resourcePath, $content);
+        $this->info('   ✅ Added enhanced fields to User Resource.');
+    }
+
+    /**
+     * Update Customer Resource with enhanced columns and form fields
+     */
+    protected function updateCustomerResource(string $customerModel): void
+    {
+        if (!$customerModel) {
+            return;
+        }
+        
+        // Extract model name
+        $modelParts = explode('\\', $customerModel);
+        $modelName = end($modelParts);
+        $resourceName = $modelName . 'Resource';
+        
+        $resourcePath = app_path('Support/Inertia/Resources/' . $resourceName . '.php');
+        if (!File::exists($resourcePath)) {
+            return;
+        }
+        
+        $content = File::get($resourcePath);
+        
+        // Check if enhanced fields already exist
+        if (strpos($content, "first_name") !== false) {
+            $this->comment("   ℹ️  Enhanced fields already exist in Customer Resource.");
+            return;
+        }
+        
+        // Add imports if needed
+        if (strpos($content, "use InertiaResource\\FormFields\\TextField;") === false) {
+            $content = str_replace(
+                "use InertiaResource\\Columns\\TextColumn;",
+                "use InertiaResource\\Columns\\TextColumn;\nuse InertiaResource\\FormFields\\TextField;",
+                $content
+            );
+        }
+        
+        // Update columns in table() method
+        $columnsPattern = "/(TextColumn::make\('id', 'ID'\),)([\s\S]*?)(\/\/ Add your columns here)/";
+        $columnsReplacement = '$1' . 
+            "\n                TextColumn::make('first_name', 'First Name'),\n" .
+            "                TextColumn::make('last_name', 'Last Name'),\n" .
+            "                TextColumn::make('email', 'Email'),\n" .
+            "                TextColumn::make('mobile_number', 'Mobile Number'),\n" .
+            '                $3';
+        $content = preg_replace($columnsPattern, $columnsReplacement, $content);
+        
+        // Update form fields in form() method
+        $formPattern = "/(\/\/ Add your form fields here[\s\S]*?)(\]\s*;)/";
+        $formReplacement = '$1' . 
+            "\n            TextField::make('first_name', 'First Name')->required(),\n" .
+            "            TextField::make('last_name', 'Last Name')->required(),\n" .
+            "            TextField::make('email', 'Email')->type('email')->required(),\n" .
+            "            TextField::make('mobile_number', 'Mobile Number'),\n" .
+            '        $2';
+        $content = preg_replace($formPattern, $formReplacement, $content);
+        
+        File::put($resourcePath, $content);
+        $this->info("   ✅ Added enhanced fields to Customer Resource.");
     }
 }

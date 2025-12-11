@@ -43,10 +43,13 @@ class InertiaResourceServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \InertiaResource\Console\InstallCommand::class,
+                \InertiaResource\Console\ForceReinstallCommand::class,
                 \InertiaResource\Console\CreateInertiaResourceCommand::class,
                 \InertiaResource\Console\CreateUserModelCommand::class,
                 \InertiaResource\Console\PublishAssetsCommand::class,
                 \InertiaResource\Console\CreateMenuModelsCommand::class,
+                \InertiaResource\Console\RecreateLayoutsCommand::class,
+                \InertiaResource\Console\SetupMiddlewareCommand::class,
             ]);
         }
 
@@ -198,9 +201,17 @@ class InertiaResourceServiceProvider extends ServiceProvider
             return;
         }
 
-        // Share menu using Inertia middleware pattern
-        // This will be called on every request via HandleInertiaRequests middleware
-        // or we can use Inertia::share() directly
+        // Check if HandleInertiaRequests middleware exists
+        // If it does, it will handle menu sharing via its share() method
+        // If not, we'll use Inertia::share() as a fallback
+        $middlewareClass = \App\Http\Middleware\HandleInertiaRequests::class;
+        if (class_exists($middlewareClass)) {
+            // Middleware exists, it will handle menu sharing
+            // No need to share here as middleware takes precedence
+            return;
+        }
+
+        // Fallback: Share menu using Inertia::share() if middleware doesn't exist
         try {
             \Inertia\Inertia::share('menu', function () {
                 $menuGroupModel = config('inertia-resource.menu_group_model', \App\Models\MenuGroup::class);
