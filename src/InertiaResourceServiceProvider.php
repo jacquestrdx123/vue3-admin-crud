@@ -36,6 +36,9 @@ class InertiaResourceServiceProvider extends ServiceProvider
         // Register customer guard if customers are enabled
         $this->registerCustomerGuard();
 
+        // Share menu with Inertia automatically
+        $this->shareMenuWithInertia();
+
         // Register commands
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -178,6 +181,43 @@ class InertiaResourceServiceProvider extends ServiceProvider
                 $app['request']
             );
         });
+    }
+
+    /**
+     * Share menu with Inertia automatically if models exist
+     */
+    protected function shareMenuWithInertia(): void
+    {
+        // Only share menu in web requests, not console
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        // Check if Inertia facade is available
+        if (!class_exists(\Inertia\Inertia::class)) {
+            return;
+        }
+
+        // Share menu using Inertia middleware pattern
+        // This will be called on every request via HandleInertiaRequests middleware
+        // or we can use Inertia::share() directly
+        try {
+            \Inertia\Inertia::share('menu', function () {
+                $menuGroupModel = config('inertia-resource.menu_group_model', \App\Models\MenuGroup::class);
+                $menuItemModel = config('inertia-resource.menu_item_model', \App\Models\MenuItem::class);
+
+                // Check if models exist
+                if (!class_exists($menuGroupModel) || !class_exists($menuItemModel)) {
+                    return [];
+                }
+
+                // Use MenuBuilder to build menu
+                return \InertiaResource\Inertia\MenuBuilder::build();
+            });
+        } catch (\Exception $e) {
+            // Silently fail if Inertia is not properly set up
+            // This prevents errors during installation or when Inertia is not configured
+        }
     }
 }
 
