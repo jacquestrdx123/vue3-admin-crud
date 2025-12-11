@@ -560,25 +560,30 @@ CSS;
             File::makeDirectory($authPath, 0755, true);
         }
 
-        // Admin Login Page (force overwrite)
-        $adminLoginStub = __DIR__.'/../../stubs/Pages/Auth/AdminLogin.vue.stub';
+        // Admin Login Page (force overwrite from vendor)
+        $vendorPath = resource_path('js/vendor/inertia-resource');
+        $adminLoginSource = $vendorPath.'/Pages/Auth/AdminLogin.vue';
         $adminLoginPath = $authPath.'/AdminLogin.vue';
 
-        if (File::exists($adminLoginStub)) {
-            File::copy($adminLoginStub, $adminLoginPath);
-            $this->info('Created/Updated AdminLogin.vue');
+        if (File::exists($adminLoginSource)) {
+            File::copy($adminLoginSource, $adminLoginPath);
+            $this->info('Created/Updated AdminLogin.vue (from vendor)');
+        } else {
+            $this->warn('⚠️  AdminLogin.vue not found in vendor. Make sure to publish assets first.');
         }
 
-        // Customer Login Page (only if use_customers is enabled)
+        // Customer Login Page (force overwrite from vendor, only if use_customers is enabled)
         $useCustomers = config('inertia-resource.use_customers', false);
         
         if ($useCustomers) {
-            $customerLoginStub = __DIR__.'/../../stubs/Pages/Auth/CustomerLogin.vue.stub';
+            $customerLoginSource = $vendorPath.'/Pages/Auth/CustomerLogin.vue';
             $customerLoginPath = $authPath.'/CustomerLogin.vue';
 
-            if (File::exists($customerLoginStub)) {
-                File::copy($customerLoginStub, $customerLoginPath);
-                $this->info('Created/Updated CustomerLogin.vue');
+            if (File::exists($customerLoginSource)) {
+                File::copy($customerLoginSource, $customerLoginPath);
+                $this->info('Created/Updated CustomerLogin.vue (from vendor)');
+            } else {
+                $this->warn('⚠️  CustomerLogin.vue not found in vendor. Make sure to publish assets first.');
             }
         } else {
             $this->comment('Customer login page skipped (use_customers is disabled).');
@@ -586,13 +591,14 @@ CSS;
     }
 
     /**
-     * Create admin layouts and dashboard with force overwrite
+     * Create admin layouts and dashboard with force overwrite (from vendor)
      */
     protected function createAdminLayouts(): void
     {
         $layoutsPath = resource_path('js/Layouts');
         $pagesPath = resource_path('js/Pages');
         $componentsPath = resource_path('js/Components');
+        $vendorPath = resource_path('js/vendor/inertia-resource');
 
         // Create directories if they don't exist
         if (!File::exists($layoutsPath)) {
@@ -608,51 +614,52 @@ CSS;
             File::makeDirectory($dashboardComponentsPath, 0755, true);
         }
 
-        // AdminLayout (force overwrite)
-        $adminLayoutStub = __DIR__.'/../../stubs/Layouts/AdminLayout.vue.stub';
+        // AdminLayout (force overwrite from vendor)
+        $adminLayoutSource = $vendorPath.'/Layouts/AdminLayout.vue';
         $adminLayoutPath = $layoutsPath.'/AdminLayout.vue';
-        if (File::exists($adminLayoutStub)) {
-            File::copy($adminLayoutStub, $adminLayoutPath);
-            $this->info('Created/Updated AdminLayout.vue');
+        if (File::exists($adminLayoutSource)) {
+            File::copy($adminLayoutSource, $adminLayoutPath);
+            $this->info('Created/Updated AdminLayout.vue (from vendor)');
         } else {
-            $this->warn('⚠️  AdminLayout.vue.stub not found. Please create resources/js/Layouts/AdminLayout.vue manually.');
+            $this->warn('⚠️  AdminLayout.vue not found in vendor. Make sure to publish assets first.');
         }
 
-        // DashboardLayout (force overwrite)
-        $dashboardLayoutStub = __DIR__.'/../../stubs/Layouts/DashboardLayout.vue.stub';
+        // DashboardLayout (force overwrite from vendor)
+        $dashboardLayoutSource = $vendorPath.'/Layouts/DashboardLayout.vue';
         $dashboardLayoutPath = $layoutsPath.'/DashboardLayout.vue';
-        if (File::exists($dashboardLayoutStub)) {
-            File::copy($dashboardLayoutStub, $dashboardLayoutPath);
-            $this->info('Created/Updated DashboardLayout.vue');
+        if (File::exists($dashboardLayoutSource)) {
+            File::copy($dashboardLayoutSource, $dashboardLayoutPath);
+            $this->info('Created/Updated DashboardLayout.vue (from vendor)');
         }
 
-        // Dashboard Page (force overwrite)
-        $dashboardStub = __DIR__.'/../../stubs/Pages/Dashboard.vue.stub';
+        // Dashboard Page (force overwrite from vendor)
+        $dashboardSource = $vendorPath.'/Pages/Dashboard.vue';
         $dashboardPath = $pagesPath.'/Dashboard.vue';
-        if (File::exists($dashboardStub)) {
-            File::copy($dashboardStub, $dashboardPath);
-            $this->info('Created/Updated Dashboard.vue');
+        if (File::exists($dashboardSource)) {
+            File::copy($dashboardSource, $dashboardPath);
+            $this->info('Created/Updated Dashboard.vue (from vendor)');
         } else {
-            $this->warn('⚠️  Dashboard.vue.stub not found. Please create resources/js/Pages/Dashboard.vue manually.');
+            $this->warn('⚠️  Dashboard.vue not found in vendor. Make sure to publish assets first.');
         }
 
-        // StatCard Component (force overwrite)
-        $statCardStub = __DIR__.'/../../stubs/Components/Dashboard/StatCard.vue.stub';
+        // StatCard Component (force overwrite from vendor)
+        $statCardSource = $vendorPath.'/Components/Dashboard/StatCard.vue';
         $statCardPath = $dashboardComponentsPath.'/StatCard.vue';
-        if (File::exists($statCardStub)) {
-            File::copy($statCardStub, $statCardPath);
-            $this->info('Created/Updated StatCard.vue');
+        if (File::exists($statCardSource)) {
+            File::copy($statCardSource, $statCardPath);
+            $this->info('Created/Updated StatCard.vue (from vendor)');
         }
     }
 
     /**
-     * Create UI components and composables with force overwrite
+     * Create UI components and composables with force overwrite (from vendor)
      */
     protected function createUIComponents(): void
     {
         $componentsPath = resource_path('js/Components');
         $uiPath = $componentsPath.'/UI';
         $composablesPath = resource_path('js/Composables');
+        $vendorPath = resource_path('js/vendor/inertia-resource');
 
         // Create directories if they don't exist
         if (!File::exists($uiPath)) {
@@ -662,44 +669,44 @@ CSS;
             File::makeDirectory($composablesPath, 0755, true);
         }
 
-        // Card component (force overwrite)
-        $cardStub = __DIR__.'/../../stubs/Components/UI/Card.vue.stub';
+        // Card component (force overwrite from vendor)
+        $cardSource = $vendorPath.'/Components/UI/Card.vue';
         $cardPath = $uiPath.'/Card.vue';
-        if (File::exists($cardStub)) {
-            File::copy($cardStub, $cardPath);
-            $this->info('Created/Updated Card.vue');
+        if (File::exists($cardSource)) {
+            File::copy($cardSource, $cardPath);
+            $this->info('Created/Updated Card.vue (from vendor)');
         } else {
-            $this->warn('⚠️  Card.vue.stub not found.');
+            $this->warn('⚠️  Card.vue not found in vendor. Make sure to publish assets first.');
         }
 
-        // Badge component (force overwrite)
-        $badgeStub = __DIR__.'/../../stubs/Components/UI/Badge.vue.stub';
+        // Badge component (force overwrite from vendor)
+        $badgeSource = $vendorPath.'/Components/UI/Badge.vue';
         $badgePath = $uiPath.'/Badge.vue';
-        if (File::exists($badgeStub)) {
-            File::copy($badgeStub, $badgePath);
-            $this->info('Created/Updated Badge.vue');
+        if (File::exists($badgeSource)) {
+            File::copy($badgeSource, $badgePath);
+            $this->info('Created/Updated Badge.vue (from vendor)');
         } else {
-            $this->warn('⚠️  Badge.vue.stub not found.');
+            $this->warn('⚠️  Badge.vue not found in vendor. Make sure to publish assets first.');
         }
 
-        // Pagination component (force overwrite)
-        $paginationStub = __DIR__.'/../../stubs/Components/UI/Pagination.vue.stub';
+        // Pagination component (force overwrite from vendor)
+        $paginationSource = $vendorPath.'/Components/UI/Pagination.vue';
         $paginationPath = $uiPath.'/Pagination.vue';
-        if (File::exists($paginationStub)) {
-            File::copy($paginationStub, $paginationPath);
-            $this->info('Created/Updated Pagination.vue');
+        if (File::exists($paginationSource)) {
+            File::copy($paginationSource, $paginationPath);
+            $this->info('Created/Updated Pagination.vue (from vendor)');
         } else {
-            $this->warn('⚠️  Pagination.vue.stub not found.');
+            $this->warn('⚠️  Pagination.vue not found in vendor. Make sure to publish assets first.');
         }
 
-        // useFieldVisibility composable (force overwrite)
-        $composableStub = __DIR__.'/../../stubs/Composables/useFieldVisibility.js.stub';
+        // useFieldVisibility composable (force overwrite from vendor)
+        $composableSource = $vendorPath.'/Composables/useFieldVisibility.js';
         $composablePath = $composablesPath.'/useFieldVisibility.js';
-        if (File::exists($composableStub)) {
-            File::copy($composableStub, $composablePath);
-            $this->info('Created/Updated useFieldVisibility.js');
+        if (File::exists($composableSource)) {
+            File::copy($composableSource, $composablePath);
+            $this->info('Created/Updated useFieldVisibility.js (from vendor)');
         } else {
-            $this->warn('⚠️  useFieldVisibility.js.stub not found.');
+            $this->warn('⚠️  useFieldVisibility.js not found in vendor. Make sure to publish assets first.');
         }
     }
 }

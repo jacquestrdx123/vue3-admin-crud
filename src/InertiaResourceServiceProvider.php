@@ -85,19 +85,9 @@ class InertiaResourceServiceProvider extends ServiceProvider
             __DIR__.'/../resources/css/app.css' => resource_path('css/vue-admin-panel.css'),
         ], 'inertia-resource-assets');
 
-        // Publish login page stubs
-        $this->publishes([
-            __DIR__.'/../stubs/Pages/Auth/AdminLogin.vue.stub' => resource_path('js/Pages/Auth/AdminLogin.vue'),
-            __DIR__.'/../stubs/Pages/Auth/CustomerLogin.vue.stub' => resource_path('js/Pages/Auth/CustomerLogin.vue'),
-        ], 'inertia-resource-login-pages');
-
-        // Publish admin layouts and dashboard
-        $this->publishes([
-            __DIR__.'/../stubs/Layouts/AdminLayout.vue.stub' => resource_path('js/Layouts/AdminLayout.vue'),
-            __DIR__.'/../stubs/Layouts/DashboardLayout.vue.stub' => resource_path('js/Layouts/DashboardLayout.vue'),
-            __DIR__.'/../stubs/Pages/Dashboard.vue.stub' => resource_path('js/Pages/Dashboard.vue'),
-            __DIR__.'/../stubs/Components/Dashboard/StatCard.vue.stub' => resource_path('js/Components/Dashboard/StatCard.vue'),
-        ], 'inertia-resource-layouts');
+        // Note: Login pages, layouts, dashboard, and components are now published via inertia-resource-components
+        // They are located in resources/js/ and will be published to js/vendor/inertia-resource/
+        // Users can override by creating files in their app's resources/js/ directory
 
         // Publish menu models
         $this->publishes([
@@ -106,6 +96,7 @@ class InertiaResourceServiceProvider extends ServiceProvider
         ], 'inertia-resource-menu-models');
 
         // Publish all assets (config, migrations, components) together
+        // Note: Layouts, pages, and components are now in resources/js/ and published via inertia-resource-components
         $this->publishes([
             __DIR__.'/../config/inertia-resource.php' => config_path('inertia-resource.php'),
             __DIR__.'/../database/migrations/create_user_column_preferences_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_user_column_preferences_table.php'),
@@ -115,10 +106,6 @@ class InertiaResourceServiceProvider extends ServiceProvider
             __DIR__.'/../tailwind.config.js' => base_path('tailwind.config.js'),
             __DIR__.'/../resources/css/app.css' => resource_path('css/vue-admin-panel.css'),
             __DIR__.'/../stubs/vite.config.js.stub' => base_path('vite.config.js'),
-            __DIR__.'/../stubs/Layouts/AdminLayout.vue.stub' => resource_path('js/Layouts/AdminLayout.vue'),
-            __DIR__.'/../stubs/Layouts/DashboardLayout.vue.stub' => resource_path('js/Layouts/DashboardLayout.vue'),
-            __DIR__.'/../stubs/Pages/Dashboard.vue.stub' => resource_path('js/Pages/Dashboard.vue'),
-            __DIR__.'/../stubs/Components/Dashboard/StatCard.vue.stub' => resource_path('js/Components/Dashboard/StatCard.vue'),
             __DIR__.'/../stubs/Models/MenuGroup.php.stub' => app_path('Models/MenuGroup.php'),
             __DIR__.'/../stubs/Models/MenuItem.php.stub' => app_path('Models/MenuItem.php'),
         ], 'inertia-resource');

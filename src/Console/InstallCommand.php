@@ -105,9 +105,9 @@ class InstallCommand extends Command
         $this->cleanupWebRoutes();
         $this->newLine();
 
-        // Create login pages
-        $this->info('🔐 Creating login pages...');
-        $this->createLoginPages();
+        // Login pages are now in vendor - users can override by creating files in resources/js/Pages/Auth/
+        $this->info('🔐 Login pages are available in vendor...');
+        $this->comment('   💡 To customize, create files in resources/js/Pages/Auth/ (they will override vendor versions)');
         $this->newLine();
 
         // Create admin routes
@@ -123,14 +123,9 @@ class InstallCommand extends Command
             $this->newLine();
         }
 
-        // Create admin layouts and dashboard
-        $this->info('📐 Creating admin layouts and dashboard...');
-        $this->createAdminLayouts();
-        $this->newLine();
-
-        // Create UI components and composables
-        $this->info('🎨 Creating UI components and composables...');
-        $this->createUIComponents();
+        // Layouts, dashboard, and components are now in vendor - users can override by creating files in resources/js/
+        $this->info('📐 Layouts, dashboard, and components are available in vendor...');
+        $this->comment('   💡 To customize, create files in resources/js/ (they will override vendor versions)');
         $this->newLine();
 
         // Install npm dependencies
@@ -328,14 +323,6 @@ class InstallCommand extends Command
             ]);
             $this->call('vendor:publish', [
                 '--tag' => 'inertia-resource-assets',
-                '--force' => false,
-            ]);
-            $this->call('vendor:publish', [
-                '--tag' => 'inertia-resource-login-pages',
-                '--force' => false,
-            ]);
-            $this->call('vendor:publish', [
-                '--tag' => 'inertia-resource-layouts',
                 '--force' => false,
             ]);
             $this->call('vendor:publish', [
@@ -1084,69 +1071,11 @@ CSS;
      */
     protected function createLoginPages(): void
     {
-        $pagesPath = resource_path('js/Pages');
-        $authPath = $pagesPath.'/Auth';
-
-        // Create Auth directory if it doesn't exist
-        if (!File::exists($authPath)) {
-            File::makeDirectory($authPath, 0755, true);
-        }
-
-        // Admin Login Page
-        $adminLoginStub = __DIR__.'/../../stubs/Pages/Auth/AdminLogin.vue.stub';
-        $adminLoginPath = $authPath.'/AdminLogin.vue';
-
-        if (File::exists($adminLoginStub)) {
-            if (File::exists($adminLoginPath)) {
-                // Check if the existing file uses route() helper (requires Ziggy)
-                $existingContent = File::get($adminLoginPath);
-                $usesRouteHelper = str_contains($existingContent, "route('admin.login')") || 
-                                   str_contains($existingContent, 'route("admin.login")');
-                
-                if ($usesRouteHelper) {
-                    $this->warn('⚠️  AdminLogin.vue uses route() helper. Fixing to use direct URL...');
-                    File::copy($adminLoginStub, $adminLoginPath);
-                    $this->info('✅ Fixed AdminLogin.vue with direct URL path.');
-                } else {
-                    $this->comment('AdminLogin.vue already exists. Skipping...');
-                }
-            } else {
-                File::copy($adminLoginStub, $adminLoginPath);
-                $this->info('Created AdminLogin.vue');
-            }
-        }
-
-        // Customer Login Page (only if use_customers is enabled)
-        $useCustomers = config('inertia-resource.use_customers', false);
-        
-        if ($useCustomers) {
-            $customerLoginStub = __DIR__.'/../../stubs/Pages/Auth/CustomerLogin.vue.stub';
-            $customerLoginPath = $authPath.'/CustomerLogin.vue';
-
-            if (File::exists($customerLoginStub)) {
-                if (File::exists($customerLoginPath)) {
-                    // Check if the existing file uses route() helper (requires Ziggy)
-                    $existingContent = File::get($customerLoginPath);
-                    $usesRouteHelper = str_contains($existingContent, "route('customer.login')") || 
-                                       str_contains($existingContent, 'route("customer.login")') ||
-                                       preg_match("/route\(['\"]customer\.login['\"]\)/", $existingContent);
-                    
-                    if ($usesRouteHelper) {
-                        $this->warn('⚠️  CustomerLogin.vue uses route() helper. Fixing to use direct URL...');
-                        File::copy($customerLoginStub, $customerLoginPath);
-                        $this->info('✅ Fixed CustomerLogin.vue with direct URL path.');
-                    } else {
-                        $this->comment('CustomerLogin.vue already exists. Skipping...');
-                    }
-                } else {
-                    File::copy($customerLoginStub, $customerLoginPath);
-                    $this->info('Created CustomerLogin.vue');
-                }
-            }
-        } else {
-            $this->comment('Customer login page skipped (use_customers is disabled).');
-            $this->comment('Enable it in config/inertia-resource.php to create the customer login page.');
-        }
+        // Login pages are now in vendor at resources/js/vendor/inertia-resource/Pages/Auth/
+        // Users can override by creating files in resources/js/Pages/Auth/
+        // Vite will automatically prefer app files over vendor files
+        $this->comment('   Login pages are available from vendor and can be imported from @/vendor/inertia-resource/Pages/Auth/');
+        $this->comment('   To customize, create files in resources/js/Pages/Auth/ (they will override vendor versions)');
     }
 
     /**
@@ -1915,79 +1844,12 @@ CSS;
      */
     protected function createAdminLayouts(): void
     {
-        $layoutsPath = resource_path('js/Layouts');
-        $pagesPath = resource_path('js/Pages');
-        $componentsPath = resource_path('js/Components');
-
-        // Create directories if they don't exist
-        if (!File::exists($layoutsPath)) {
-            File::makeDirectory($layoutsPath, 0755, true);
-        }
-
-        if (!File::exists($pagesPath)) {
-            File::makeDirectory($pagesPath, 0755, true);
-        }
-
-        $dashboardComponentsPath = $componentsPath.'/Dashboard';
-        if (!File::exists($dashboardComponentsPath)) {
-            File::makeDirectory($dashboardComponentsPath, 0755, true);
-        }
-
-        // AdminLayout
-        $adminLayoutStub = __DIR__.'/../../stubs/Layouts/AdminLayout.vue.stub';
-        $adminLayoutPath = $layoutsPath.'/AdminLayout.vue';
-        if (File::exists($adminLayoutStub)) {
-            if (File::exists($adminLayoutPath)) {
-                // Always update AdminLayout.vue to ensure it exists and is up to date
-                File::copy($adminLayoutStub, $adminLayoutPath);
-                $this->info('Updated AdminLayout.vue');
-            } else {
-                File::copy($adminLayoutStub, $adminLayoutPath);
-                $this->info('Created AdminLayout.vue');
-            }
-        } else {
-            $this->warn('⚠️  AdminLayout.vue.stub not found. Please create resources/js/Layouts/AdminLayout.vue manually.');
-        }
-
-        // DashboardLayout
-        $dashboardLayoutStub = __DIR__.'/../../stubs/Layouts/DashboardLayout.vue.stub';
-        $dashboardLayoutPath = $layoutsPath.'/DashboardLayout.vue';
-        if (File::exists($dashboardLayoutStub)) {
-            if (File::exists($dashboardLayoutPath)) {
-                $this->warn('DashboardLayout.vue already exists. Skipping...');
-            } else {
-                File::copy($dashboardLayoutStub, $dashboardLayoutPath);
-                $this->info('Created DashboardLayout.vue');
-            }
-        }
-
-        // Dashboard Page
-        $dashboardStub = __DIR__.'/../../stubs/Pages/Dashboard.vue.stub';
-        $dashboardPath = $pagesPath.'/Dashboard.vue';
-        if (File::exists($dashboardStub)) {
-            if (File::exists($dashboardPath)) {
-                // Always update Dashboard.vue to ensure it exists and is up to date
-                File::copy($dashboardStub, $dashboardPath);
-                $this->info('Updated Dashboard.vue');
-            } else {
-                File::copy($dashboardStub, $dashboardPath);
-                $this->info('Created Dashboard.vue');
-            }
-        } else {
-            $this->warn('⚠️  Dashboard.vue.stub not found. Please create resources/js/Pages/Dashboard.vue manually.');
-        }
-
-        // StatCard Component
-        $statCardStub = __DIR__.'/../../stubs/Components/Dashboard/StatCard.vue.stub';
-        $statCardPath = $dashboardComponentsPath.'/StatCard.vue';
-        if (File::exists($statCardStub)) {
-            if (File::exists($statCardPath)) {
-                $this->warn('StatCard.vue already exists. Skipping...');
-            } else {
-                File::copy($statCardStub, $statCardPath);
-                $this->info('Created StatCard.vue');
-            }
-        }
+        // Layouts, dashboard, and components are now in vendor at resources/js/vendor/inertia-resource/
+        // Users can override by creating files in resources/js/ (Layouts/, Pages/, Components/)
+        // Vite will automatically prefer app files over vendor files
+        $this->comment('   Layouts, dashboard, and components are available from vendor');
+        $this->comment('   To customize, create files in resources/js/ (they will override vendor versions)');
+        $this->comment('   Example: Create resources/js/Layouts/AdminLayout.vue to override the vendor version');
     }
 
     /**
@@ -1995,77 +1857,12 @@ CSS;
      */
     protected function createUIComponents(): void
     {
-        $componentsPath = resource_path('js/Components');
-        $uiPath = $componentsPath.'/UI';
-        $composablesPath = resource_path('js/Composables');
-
-        // Create directories if they don't exist
-        if (!File::exists($uiPath)) {
-            File::makeDirectory($uiPath, 0755, true);
-        }
-        if (!File::exists($composablesPath)) {
-            File::makeDirectory($composablesPath, 0755, true);
-        }
-
-        // Card component
-        $cardStub = __DIR__.'/../../stubs/Components/UI/Card.vue.stub';
-        $cardPath = $uiPath.'/Card.vue';
-        if (File::exists($cardStub)) {
-            if (File::exists($cardPath)) {
-                File::copy($cardStub, $cardPath);
-                $this->info('Updated Card.vue');
-            } else {
-                File::copy($cardStub, $cardPath);
-                $this->info('Created Card.vue');
-            }
-        } else {
-            $this->warn('⚠️  Card.vue.stub not found.');
-        }
-
-        // Badge component
-        $badgeStub = __DIR__.'/../../stubs/Components/UI/Badge.vue.stub';
-        $badgePath = $uiPath.'/Badge.vue';
-        if (File::exists($badgeStub)) {
-            if (File::exists($badgePath)) {
-                File::copy($badgeStub, $badgePath);
-                $this->info('Updated Badge.vue');
-            } else {
-                File::copy($badgeStub, $badgePath);
-                $this->info('Created Badge.vue');
-            }
-        } else {
-            $this->warn('⚠️  Badge.vue.stub not found.');
-        }
-
-        // Pagination component
-        $paginationStub = __DIR__.'/../../stubs/Components/UI/Pagination.vue.stub';
-        $paginationPath = $uiPath.'/Pagination.vue';
-        if (File::exists($paginationStub)) {
-            if (File::exists($paginationPath)) {
-                File::copy($paginationStub, $paginationPath);
-                $this->info('Updated Pagination.vue');
-            } else {
-                File::copy($paginationStub, $paginationPath);
-                $this->info('Created Pagination.vue');
-            }
-        } else {
-            $this->warn('⚠️  Pagination.vue.stub not found.');
-        }
-
-        // useFieldVisibility composable
-        $composableStub = __DIR__.'/../../stubs/Composables/useFieldVisibility.js.stub';
-        $composablePath = $composablesPath.'/useFieldVisibility.js';
-        if (File::exists($composableStub)) {
-            if (File::exists($composablePath)) {
-                File::copy($composableStub, $composablePath);
-                $this->info('Updated useFieldVisibility.js');
-            } else {
-                File::copy($composableStub, $composablePath);
-                $this->info('Created useFieldVisibility.js');
-            }
-        } else {
-            $this->warn('⚠️  useFieldVisibility.js.stub not found.');
-        }
+        // UI components and composables are now in vendor at resources/js/vendor/inertia-resource/
+        // Users can override by creating files in resources/js/Components/ or resources/js/Composables/
+        // Vite will automatically prefer app files over vendor files
+        $this->comment('   UI components and composables are available from vendor');
+        $this->comment('   To customize, create files in resources/js/Components/ or resources/js/Composables/');
+        $this->comment('   Example: Create resources/js/Components/UI/Card.vue to override the vendor version');
     }
 
     /**

@@ -52,25 +52,26 @@ class RecreateLayoutsCommand extends Command
             $this->info('✅ Created Components/Dashboard directory');
         }
 
-        // Files to recreate
+        // Files to recreate from vendor (copying to app directory to override vendor versions)
+        $vendorPath = resource_path('js/vendor/inertia-resource');
         $files = [
             [
-                'stub' => __DIR__.'/../../stubs/Layouts/AdminLayout.vue.stub',
+                'source' => $vendorPath.'/Layouts/AdminLayout.vue',
                 'target' => $layoutsPath.'/AdminLayout.vue',
                 'name' => 'AdminLayout.vue',
             ],
             [
-                'stub' => __DIR__.'/../../stubs/Layouts/DashboardLayout.vue.stub',
+                'source' => $vendorPath.'/Layouts/DashboardLayout.vue',
                 'target' => $layoutsPath.'/DashboardLayout.vue',
                 'name' => 'DashboardLayout.vue',
             ],
             [
-                'stub' => __DIR__.'/../../stubs/Pages/Dashboard.vue.stub',
+                'source' => $vendorPath.'/Pages/Dashboard.vue',
                 'target' => $pagesPath.'/Dashboard.vue',
                 'name' => 'Dashboard.vue',
             ],
             [
-                'stub' => __DIR__.'/../../stubs/Components/Dashboard/StatCard.vue.stub',
+                'source' => $vendorPath.'/Components/Dashboard/StatCard.vue',
                 'target' => $componentsPath.'/StatCard.vue',
                 'name' => 'StatCard.vue',
             ],
@@ -81,8 +82,9 @@ class RecreateLayoutsCommand extends Command
         $overwritten = 0;
 
         foreach ($files as $file) {
-            if (!File::exists($file['stub'])) {
-                $this->warn("⚠️  Stub not found: {$file['stub']}");
+            if (!File::exists($file['source'])) {
+                $this->warn("⚠️  Vendor file not found: {$file['source']}");
+                $this->comment("   Make sure to run: php artisan vendor:publish --tag=inertia-resource-components");
                 continue;
             }
 
@@ -95,13 +97,13 @@ class RecreateLayoutsCommand extends Command
             }
 
             try {
-                File::copy($file['stub'], $file['target']);
+                File::copy($file['source'], $file['target']);
                 
                 if ($exists) {
-                    $this->info("   ✅ Overwritten {$file['name']}");
+                    $this->info("   ✅ Overwritten {$file['name']} (copied from vendor)");
                     $overwritten++;
                 } else {
-                    $this->info("   ✅ Created {$file['name']}");
+                    $this->info("   ✅ Created {$file['name']} (copied from vendor)");
                     $created++;
                 }
             } catch (\Exception $e) {
