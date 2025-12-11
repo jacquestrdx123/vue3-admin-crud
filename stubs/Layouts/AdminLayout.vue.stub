@@ -24,24 +24,109 @@
 
       <!-- Navigation -->
       <nav class="flex-1 overflow-y-auto py-4">
-        <div class="px-2 space-y-1">
+        <div class="px-2 space-y-2">
+          <!-- Dashboard Link -->
           <a
-            v-for="item in navigation"
-            :key="item.name"
-            :href="item.href"
-            @click.prevent="navigate(item.href)"
+            :href="'/admin'"
+            @click.prevent="navigate('/admin')"
             :class="[
               'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-              isActive(item.href)
+              isActive('/admin')
                 ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             ]"
           >
-            <svg v-if="item.icon" class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
-            </svg>
-            <span v-if="sidebarOpen">{{ item.name }}</span>
+            <HomeIcon class="w-5 h-5 flex-shrink-0" />
+            <span v-if="sidebarOpen">Dashboard</span>
           </a>
+
+          <!-- Menu Groups from Database -->
+          <template v-for="group in menuGroups" :key="group.key">
+            <!-- Group Header (if sidebar is open) -->
+            <div v-if="sidebarOpen && group.label" class="px-3 pt-4 pb-2">
+              <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {{ group.label }}
+              </h3>
+            </div>
+
+            <!-- Group Items -->
+            <template v-for="item in group.items" :key="item.key">
+              <!-- Item with children -->
+              <div v-if="item.children && item.children.length > 0">
+                <button
+                  @click="toggleMenuItem(item.key)"
+                  :class="[
+                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                    isActive(item.url)
+                      ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ]"
+                >
+                  <component
+                    v-if="item.icon"
+                    :is="getIconComponent(item.icon)"
+                    class="w-5 h-5 flex-shrink-0"
+                  />
+                  <span v-if="sidebarOpen" class="flex-1 text-left">{{ item.label }}</span>
+                  <svg
+                    v-if="sidebarOpen"
+                    :class="[
+                      'w-4 h-4 flex-shrink-0 transition-transform',
+                      expandedItems[item.key] ? 'rotate-90' : ''
+                    ]"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                
+                <!-- Children (shown when expanded) -->
+                <div v-if="sidebarOpen && expandedItems[item.key]" class="ml-4 mt-1 space-y-1">
+                  <a
+                    v-for="child in item.children"
+                    :key="child.key"
+                    :href="child.url"
+                    @click.prevent="navigate(child.url)"
+                    :class="[
+                      'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                      isActive(child.url)
+                        ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ]"
+                  >
+                    <component
+                      v-if="child.icon"
+                      :is="getIconComponent(child.icon)"
+                      class="w-4 h-4 flex-shrink-0"
+                    />
+                    <span>{{ child.label }}</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Item without children -->
+              <a
+                v-else
+                :href="item.url"
+                @click.prevent="navigate(item.url)"
+                :class="[
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                  isActive(item.url)
+                    ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                ]"
+              >
+                <component
+                  v-if="item.icon"
+                  :is="getIconComponent(item.icon)"
+                  class="w-5 h-5 flex-shrink-0"
+                />
+                <span v-if="sidebarOpen">{{ item.label }}</span>
+              </a>
+            </template>
+          </template>
         </div>
       </nav>
 
@@ -172,11 +257,22 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
+import {
+  HomeIcon,
+  UserGroupIcon,
+  UserIcon,
+  CubeIcon,
+  ChartBarIcon,
+  CogIcon,
+  DocumentTextIcon,
+  FolderIcon,
+} from '@heroicons/vue/24/outline'
 
 const page = usePage()
 const sidebarOpen = ref(true)
 const showUserMenu = ref(false)
 const userMenuRef = ref(null)
+const expandedItems = ref({})
 
 const user = computed(() => page.props.auth?.user || null)
 const appName = computed(() => import.meta.env.VITE_APP_NAME || 'Admin Panel')
@@ -188,20 +284,56 @@ const userInitials = computed(() => {
   return names.map(n => n[0]).join('').substring(0, 2).toUpperCase()
 })
 
-// Simple navigation - can be customized
-const navigation = computed(() => {
-  return [
-    {
-      name: 'Dashboard',
-      href: '/admin',
-      icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'
-    },
-    // Add more navigation items as needed
-  ]
+// Get menu groups from MenuBuilder (shared via Inertia)
+// Menu structure: [{ key, label, icon, items: [{ key, label, icon, url, children?: [...] }] }]
+const menuGroups = computed(() => {
+  const menu = page.props.menu || []
+  if (!Array.isArray(menu) || menu.length === 0) {
+    return []
+  }
+  
+  return menu.map((group) => ({
+    key: group.key,
+    label: group.label,
+    icon: group.icon,
+    items: group.items || [],
+  }))
 })
 
-// Get menu items from MenuBuilder (shared via Inertia)
-// Menu structure: [{ key, label, icon, items: [{ key, label, icon, url, children?: [...] }] }]
+// Icon component mapping for heroicons
+const iconMap = {
+  'heroicon-o-home': HomeIcon,
+  'heroicon-o-user-group': UserGroupIcon,
+  'heroicon-o-users': UserGroupIcon,
+  'heroicon-o-user': UserIcon,
+  'heroicon-o-cube': CubeIcon,
+  'heroicon-o-chart-bar': ChartBarIcon,
+  'heroicon-o-cog': CogIcon,
+  'heroicon-o-cog-6-tooth': CogIcon,
+  'heroicon-o-document-text': DocumentTextIcon,
+  'heroicon-o-folder': FolderIcon,
+}
+
+// Get icon component from icon string
+const getIconComponent = (icon) => {
+  if (!icon) return null
+  
+  // Check if it's a heroicon name
+  if (iconMap[icon]) {
+    return iconMap[icon]
+  }
+  
+  // Check if it starts with heroicon
+  if (icon.startsWith('heroicon-')) {
+    // Try to extract the icon name and use a default
+    return CubeIcon
+  }
+  
+  // Default icon
+  return CubeIcon
+}
+
+// Get menu items from MenuBuilder (flattened for user menu dropdown)
 const menuItems = computed(() => {
   const menu = page.props.menu || []
   if (!Array.isArray(menu) || menu.length === 0) {
@@ -239,6 +371,32 @@ const menuItems = computed(() => {
   })
   
   return items
+})
+
+const toggleMenuItem = (key) => {
+  expandedItems.value[key] = !expandedItems.value[key]
+}
+
+// Auto-expand menu items if current URL matches
+onMounted(() => {
+  const currentUrl = page.url
+  menuGroups.value.forEach((group) => {
+    group.items.forEach((item) => {
+      if (isActive(item.url)) {
+        // Auto-expand parent if current page is a child
+        expandedItems.value[item.key] = true
+      }
+      
+      // Check children
+      if (item.children) {
+        item.children.forEach((child) => {
+          if (isActive(child.url)) {
+            expandedItems.value[item.key] = true
+          }
+        })
+      }
+    })
+  })
 })
 
 const isActive = (href) => {
