@@ -29,12 +29,14 @@ class CreateUserModelCommand extends Command
         $this->info('👤 Create a new user');
         $this->newLine();
 
-        // Get User model class from config
-        $userModelClass = config('inertia-resource.user_model', \App\Models\User::class);
+        // Prompt for User model class
+        $defaultUserModel = config('inertia-resource.user_model', \App\Models\User::class);
+        $userModelClass = $this->ask('User Model Class', $defaultUserModel);
 
-        if (!class_exists($userModelClass)) {
+        if (! class_exists($userModelClass)) {
             $this->error("User model class '{$userModelClass}' does not exist.");
-            $this->comment('Please ensure your User model exists or update config/inertia-resource.php');
+            $this->comment('Please ensure your User model exists.');
+
             return 1;
         }
 
@@ -60,8 +62,9 @@ class CreateUserModelCommand extends Command
             $this->newLine();
             $this->error('Validation failed:');
             foreach ($validator->errors()->all() as $error) {
-                $this->error('  - ' . $error);
+                $this->error('  - '.$error);
             }
+
             return 1;
         }
 
@@ -94,9 +97,9 @@ class CreateUserModelCommand extends Command
             return 0;
         } catch (\Exception $e) {
             $this->newLine();
-            $this->error('Failed to create user: ' . $e->getMessage());
+            $this->error('Failed to create user: '.$e->getMessage());
+
             return 1;
         }
     }
 }
-
