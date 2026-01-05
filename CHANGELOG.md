@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.2] - 2024-12-XX
+
+### Changed
+
+- Changed `make:inertia-resource` command to generate controller and routes by default
+- Controller and routes are now automatically generated unless `--no-controller` or `--no-routes` flags are used
+- Vue files remain optional and require `--vue` or `--all` flag to generate
+- Updated command signature to use `--no-controller` and `--no-routes` flags instead of `--controller` and `--routes`
+- Improved default behavior for resource generation workflow
+
 ## [2.4.50] - 2024-12-04
 
 ### Added
