@@ -54,11 +54,11 @@ class CreateInertiaResourceCommand extends Command
         // Determine namespaces and paths
         $appNamespace = $this->getAppNamespace();
         $resourceNamespace = $appNamespace.'Support\\Inertia\\Resources';
-        $controllerNamespace = $appNamespace.'Http\\Controllers';
+        $controllerNamespace = $appNamespace.'Http\\Controllers\\Inertia';
 
         // Create directories if they don't exist
         $resourcePath = app_path('Support/Inertia/Resources');
-        $controllerPath = app_path('Http/Controllers');
+        $controllerPath = app_path('Http/Controllers/Inertia');
 
         if (! File::exists($resourcePath)) {
             File::makeDirectory($resourcePath, 0755, true);
