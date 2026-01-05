@@ -11,11 +11,25 @@ createInertiaApp({
         title
             ? `${title} - ${import.meta.env.VITE_APP_NAME || 'Laravel'}`
             : import.meta.env.VITE_APP_NAME || 'Laravel',
-    resolve: (name) =>
-        resolvePageComponent(
-            `./Pages/${name}.vue`,
-            import.meta.glob('./Pages/**/*.vue')
-        ),
+    resolve: (name) => {
+        const appPages = import.meta.glob('./Pages/**/*.vue', { eager: true });
+        const vendorPages = import.meta.glob('./vendor/inertia-resource/Pages/**/*.vue', { eager: true });
+        
+        // Try app Pages first
+        const appPagePath = `./Pages/${name}.vue`;
+        if (appPages[appPagePath]) {
+            return resolvePageComponent(appPagePath, appPages);
+        }
+        
+        // Fall back to vendor pages
+        const vendorPagePath = `./vendor/inertia-resource/Pages/${name}.vue`;
+        if (vendorPages[vendorPagePath]) {
+            return resolvePageComponent(vendorPagePath, vendorPages);
+        }
+        
+        // If neither exists, try with app pages (will throw appropriate error)
+        return resolvePageComponent(appPagePath, appPages);
+    },
     setup({ el, App, props, plugin }) {
         return createApp({ render: () => h(App, props) })
             .use(plugin)
