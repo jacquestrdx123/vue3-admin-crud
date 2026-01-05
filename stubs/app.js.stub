@@ -16,13 +16,15 @@ createInertiaApp({
         const vendorPages = import.meta.glob('./vendor/inertia-resource/Pages/**/*.vue', { eager: true });
         
         // If name starts with vendor/, resolve directly from vendor pages
+        // resolvePageComponent prepends ./Pages/, so we need to return the component directly
         if (name.startsWith('vendor/')) {
             const vendorPagePath = `./${name}.vue`;
             if (vendorPages[vendorPagePath]) {
-                return resolvePageComponent(vendorPagePath, vendorPages);
+                // Return the component directly from the glob
+                return vendorPages[vendorPagePath].default || vendorPages[vendorPagePath];
             }
             // If vendor path doesn't exist, throw appropriate error
-            return resolvePageComponent(vendorPagePath, vendorPages);
+            throw new Error(`Page not found: ${vendorPagePath}`);
         }
         
         // Try app Pages first
@@ -34,7 +36,8 @@ createInertiaApp({
         // Fall back to vendor pages
         const vendorPagePath = `./vendor/inertia-resource/Pages/${name}.vue`;
         if (vendorPages[vendorPagePath]) {
-            return resolvePageComponent(vendorPagePath, vendorPages);
+            // Return the component directly from the glob
+            return vendorPages[vendorPagePath].default || vendorPages[vendorPagePath];
         }
         
         // If neither exists, try with app pages (will throw appropriate error)
