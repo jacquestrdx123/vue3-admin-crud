@@ -69,7 +69,7 @@ class CreateInertiaResourceCommand extends Command
         }
 
         // Generate InertiaResource
-        $vuePagePath = $generateVue ? "Resources/{$modelName}" : 'vendor/inertia-resource/Pages/Resources';
+        $vuePagePath = $generateVue ? "Resources/{$modelName}" : 'Resources';
         $this->generateResource($model, $modelName, $resourceName, $resourceNamespace, $resourcePath, $slug, $vuePagePath);
 
         // Generate Controller

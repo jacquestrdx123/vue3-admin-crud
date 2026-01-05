@@ -59,7 +59,7 @@ class InertiaResourceServiceProvider extends ServiceProvider
 
         // Publish Vue components, pages, and composables
         $this->publishes([
-            __DIR__.'/../resources/js' => resource_path('js/vendor/inertia-resource'),
+            __DIR__.'/../resources/js' => resource_path('js'),
         ], 'inertia-resource-components');
 
         // Publish Tailwind config
@@ -78,15 +78,15 @@ class InertiaResourceServiceProvider extends ServiceProvider
         ], 'inertia-resource-assets');
 
         // Note: Login pages, layouts, dashboard, and components are now published via inertia-resource-components
-        // They are located in resources/js/ and will be published to js/vendor/inertia-resource/
+        // They are located in resources/js/ and will be published directly to js/
         // Users can override by creating files in their app's resources/js/ directory
 
         // Publish all assets (config, migrations, components) together
-        // Note: Layouts, pages, and components are now in resources/js/ and published via inertia-resource-components
+        // Note: Layouts, pages, and components are now in resources/js/ and published directly to js/
         $this->publishes([
             __DIR__.'/../config/inertia-resource.php' => config_path('inertia-resource.php'),
             __DIR__.'/../database/migrations/create_user_column_preferences_table.php.stub' => database_path('migrations/'.date('Y_m_d_His').'_create_user_column_preferences_table.php'),
-            __DIR__.'/../resources/js' => resource_path('js/vendor/inertia-resource'),
+            __DIR__.'/../resources/js' => resource_path('js'),
             __DIR__.'/../tailwind.config.js' => base_path('tailwind.config.js'),
             __DIR__.'/../resources/css/app.css' => resource_path('css/vue-inertia-resources.css'),
             __DIR__.'/../stubs/vite.config.js.stub' => base_path('vite.config.js'),

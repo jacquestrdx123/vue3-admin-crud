@@ -40,7 +40,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useFieldVisibility } from '@/vendor/inertia-resource/Composables/useFieldVisibility'
+import { useFieldVisibility } from '@/Composables/useFieldVisibility'
 
 const props = defineProps({
   modelValue: {

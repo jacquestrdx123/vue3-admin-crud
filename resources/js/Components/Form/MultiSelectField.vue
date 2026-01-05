@@ -71,7 +71,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useFieldVisibility } from '@/vendor/inertia-resource/Composables/useFieldVisibility'
+import { useFieldVisibility } from '@/Composables/useFieldVisibility'
 
 const props = defineProps({
   modelValue: {

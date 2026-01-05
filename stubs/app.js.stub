@@ -11,38 +11,11 @@ createInertiaApp({
         title
             ? `${title} - ${import.meta.env.VITE_APP_NAME || 'Laravel'}`
             : import.meta.env.VITE_APP_NAME || 'Laravel',
-    resolve: (name) => {
-        const appPages = import.meta.glob('./Pages/**/*.vue', { eager: true });
-        const vendorPages = import.meta.glob('./vendor/inertia-resource/Pages/**/*.vue', { eager: true });
-        
-        // If name starts with vendor/, resolve directly from vendor pages
-        // resolvePageComponent prepends ./Pages/, so we need to return the component directly
-        if (name.startsWith('vendor/')) {
-            const vendorPagePath = `./${name}.vue`;
-            if (vendorPages[vendorPagePath]) {
-                // Return the component directly from the glob
-                return vendorPages[vendorPagePath].default || vendorPages[vendorPagePath];
-            }
-            // If vendor path doesn't exist, throw appropriate error
-            throw new Error(`Page not found: ${vendorPagePath}`);
-        }
-        
-        // Try app Pages first
-        const appPagePath = `./Pages/${name}.vue`;
-        if (appPages[appPagePath]) {
-            return resolvePageComponent(appPagePath, appPages);
-        }
-        
-        // Fall back to vendor pages
-        const vendorPagePath = `./vendor/inertia-resource/Pages/${name}.vue`;
-        if (vendorPages[vendorPagePath]) {
-            // Return the component directly from the glob
-            return vendorPages[vendorPagePath].default || vendorPages[vendorPagePath];
-        }
-        
-        // If neither exists, try with app pages (will throw appropriate error)
-        return resolvePageComponent(appPagePath, appPages);
-    },
+    resolve: (name) =>
+        resolvePageComponent(
+            `./Pages/${name}.vue`,
+            import.meta.glob('./Pages/**/*.vue', { eager: true })
+        ),
     setup({ el, App, props, plugin }) {
         return createApp({ render: () => h(App, props) })
             .use(plugin)

@@ -40,8 +40,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
-import BaseDataTable from '@/vendor/inertia-resource/Components/Table/BaseDataTable.vue'
-import Pagination from '@/vendor/inertia-resource/Components/UI/Pagination.vue'
+import BaseDataTable from '@/Components/Table/BaseDataTable.vue'
+import Pagination from '@/Components/UI/Pagination.vue'
 
 const props = defineProps({
   data: { type: Object, required: true },
