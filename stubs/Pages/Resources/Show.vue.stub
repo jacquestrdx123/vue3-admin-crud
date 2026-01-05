@@ -68,6 +68,8 @@
 </template>
 <script setup>
 import { router, Link } from '@inertiajs/vue3'
+// If you need to use defineAsyncComponent, import it from Vue:
+// import { defineAsyncComponent } from 'vue'
 import Card from '@/Components/UI/Card.vue'
 import Badge from '@/Components/UI/Badge.vue'
 

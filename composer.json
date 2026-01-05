@@ -1,6 +1,6 @@
 {
     "name": "jacquestrdx123/vue-inertia-resources",
-    "version": "2.7.12",
+    "version": "2.7.13",
     "description": "A Filament-like resource system for Inertia.js applications. Provides complete CRUD interface system with tables, forms, filters, actions, and more.",
     "type": "library",
     "keywords": [
@@ -24,7 +24,7 @@
     "require": {
         "php": "^8.1",
         "laravel/framework": "^12.0",
-        "inertiajs/inertia-laravel": "^1.0",
+        "inertiajs/inertia-laravel": "^2.0",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
