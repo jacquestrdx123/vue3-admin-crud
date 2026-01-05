@@ -51,14 +51,27 @@ class CreateInertiaResourceCommand extends Command
         $this->info("Creating InertiaResource for {$modelName}...");
         $this->newLine();
 
-        // Determine namespaces and paths
+        // Extract namespace path directly from the model string
+        // For example: App\Models\Users\User -> Users/User
+        // For example: App\Models\User -> User
+        $modelNamespacePath = $this->extractModelNamespacePath($model);
+
+        // Determine namespaces and paths with namespace structure
         $appNamespace = $this->getAppNamespace();
-        $resourceNamespace = $appNamespace.'Support\\Inertia\\Resources';
-        $controllerNamespace = $appNamespace.'Http\\Controllers\\Inertia';
+
+        // Convert to PHP namespace format (forward slashes to backslashes)
+        $namespacePathForPhp = str_replace('/', '\\', $modelNamespacePath);
+
+        // Always include the namespace path in PHP namespaces (even if it's just the model name)
+        // This ensures the directory structure matches the namespace
+        $namespacePathForPhp = '\\'.$namespacePathForPhp;
+
+        $resourceNamespace = $appNamespace.'Support\\Inertia\\Resources'.$namespacePathForPhp;
+        $controllerNamespace = $appNamespace.'Http\\Controllers\\Inertia'.$namespacePathForPhp;
 
         // Create directories if they don't exist
-        $resourcePath = app_path('Support/Inertia/Resources');
-        $controllerPath = app_path('Http/Controllers/Inertia');
+        $resourcePath = app_path('Support/Inertia/Resources/'.$modelNamespacePath);
+        $controllerPath = app_path('Http/Controllers/Inertia/'.$modelNamespacePath);
 
         if (! File::exists($resourcePath)) {
             File::makeDirectory($resourcePath, 0755, true);
@@ -69,7 +82,7 @@ class CreateInertiaResourceCommand extends Command
         }
 
         // Generate InertiaResource
-        $vuePagePath = $generateVue ? "Resources/{$modelName}" : 'Resources';
+        $vuePagePath = $generateVue ? "Resources/{$modelNamespacePath}" : 'Resources';
         $this->generateResource($model, $modelName, $resourceName, $resourceNamespace, $resourcePath, $slug, $vuePagePath);
 
         // Generate Controller
@@ -84,7 +97,7 @@ class CreateInertiaResourceCommand extends Command
 
         // Generate Vue Files
         if ($generateVue) {
-            $this->generateVueFiles($modelName, $slug);
+            $this->generateVueFiles($model, $modelName, $slug);
         }
 
         $this->newLine();
@@ -232,15 +245,19 @@ class CreateInertiaResourceCommand extends Command
     /**
      * Generate Vue page files
      */
-    protected function generateVueFiles(string $modelName, string $slug): void
+    protected function generateVueFiles(string $model, string $modelName, string $slug): void
     {
-        $vuePath = resource_path('js/Pages/Resources/'.$modelName);
+        // Extract namespace path from model (e.g., App\Models\Admin\User -> Admin/User)
+        $modelNamespace = $this->extractModelNamespacePath($model);
+        $vuePath = resource_path('js/Pages/Resources/'.$modelNamespace);
 
         if (! File::exists($vuePath)) {
             File::makeDirectory($vuePath, 0755, true);
         }
 
         $pages = ['Index', 'Create', 'Edit', 'Show'];
+        $routePrefix = config('inertia-resource.route_prefix', 'vue');
+        $routeBase = "{$routePrefix}.{$slug}";
 
         foreach ($pages as $page) {
             $fileName = "{$page}.vue";
@@ -265,10 +282,34 @@ class CreateInertiaResourceCommand extends Command
             $stub = File::get($stubPath);
             $stub = str_replace('{{ resourceSlug }}', $slug, $stub);
             $stub = str_replace('{{ title }}', Str::title(Str::singular($slug)), $stub);
+            $stub = str_replace('{{ routeBase }}', $routeBase, $stub);
 
             File::put($filePath, $stub);
             $this->info("✅ Created {$fileName}");
         }
+    }
+
+    /**
+     * Extract namespace path from model class directly from the input string
+     * Example: App\Models\Users\User -> Users/User
+     * Example: App\Models\User -> User
+     * Example: App\Models\Admin\User -> Admin/User
+     */
+    protected function extractModelNamespacePath(string $model): string
+    {
+        // Find the position of "Models\" in the string
+        $modelsPos = strpos($model, 'Models\\');
+
+        if ($modelsPos !== false) {
+            // Get everything after "Models\"
+            $afterModels = substr($model, $modelsPos + 7); // 7 = length of "Models\"
+
+            // Convert backslashes to forward slashes for file paths
+            return str_replace('\\', '/', $afterModels);
+        }
+
+        // Fallback: just use the class basename
+        return class_basename($model);
     }
 
     /**
