@@ -68,8 +68,8 @@
 </template>
 <script setup>
 import { router, Link } from '@inertiajs/vue3'
-import Card from '@/Components/UI/Card.vue'
-import Badge from '@/Components/UI/Badge.vue'
+import Card from '@/vendor/inertia-resource/Components/UI/Card.vue'
+import Badge from '@/vendor/inertia-resource/Components/UI/Badge.vue'
 
 const props = defineProps({
   item: { type: Object, required: true },

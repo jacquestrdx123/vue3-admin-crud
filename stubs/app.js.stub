@@ -15,6 +15,16 @@ createInertiaApp({
         const appPages = import.meta.glob('./Pages/**/*.vue', { eager: true });
         const vendorPages = import.meta.glob('./vendor/inertia-resource/Pages/**/*.vue', { eager: true });
         
+        // If name starts with vendor/, resolve directly from vendor pages
+        if (name.startsWith('vendor/')) {
+            const vendorPagePath = `./${name}.vue`;
+            if (vendorPages[vendorPagePath]) {
+                return resolvePageComponent(vendorPagePath, vendorPages);
+            }
+            // If vendor path doesn't exist, throw appropriate error
+            return resolvePageComponent(vendorPagePath, vendorPages);
+        }
+        
         // Try app Pages first
         const appPagePath = `./Pages/${name}.vue`;
         if (appPages[appPagePath]) {
