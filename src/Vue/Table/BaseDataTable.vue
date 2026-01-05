@@ -1254,6 +1254,25 @@ const getRowKey = (row) => {
   return getNestedValue(row, props.rowKey)
 }
 
+// Helper function to ensure row always has an id property
+const normalizeRowId = (row) => {
+  if (!row) return row
+  
+  // If row already has id, return as is
+  if (row.id !== undefined && row.id !== null) {
+    return row
+  }
+  
+  // Get the row key value
+  const rowKeyValue = getRowKey(row)
+  
+  // Create a new object with id property
+  return {
+    ...row,
+    id: rowKeyValue
+  }
+}
+
 const isRowSelected = (row) => {
   const key = getRowKey(row)
   return selectedRows.value.includes(key)
@@ -1282,7 +1301,9 @@ const toggleSelectAll = () => {
 }
 
 const handleAction = (action, row) => {
-  emit('action', { action: action.name, row })
+  // Ensure row always has an id property
+  const normalizedRow = normalizeRowId(row)
+  emit('action', { action: action.name, row: normalizedRow })
 }
 
 const toggleActionMenu = (rowKey, event) => {
@@ -1321,7 +1342,9 @@ const handleActionClick = (action, row) => {
 
 const handleBulkAction = (action) => {
   const rows = props.data.filter(row => selectedRows.value.includes(getRowKey(row)))
-  emit('bulk-action', { action: action.name, rows })
+  // Ensure all rows have an id property
+  const normalizedRows = rows.map(row => normalizeRowId(row))
+  emit('bulk-action', { action: action.name, rows: normalizedRows })
 }
 
 const handleExport = () => {
