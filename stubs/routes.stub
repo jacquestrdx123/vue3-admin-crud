@@ -8,5 +8,6 @@ Route::prefix('{{ routePrefix }}')->name('{{ routePrefix }}.')->group(function (
     Route::put('/{id}', [{{ controllerNamespace }}\{{ controllerName }}::class, 'update'])->name('update');
     Route::delete('/{id}', [{{ controllerNamespace }}\{{ controllerName }}::class, 'destroy'])->name('destroy');
     Route::post('/bulk-action', [{{ controllerNamespace }}\{{ controllerName }}::class, 'bulkAction'])->name('bulk-action');
+    Route::post('/export', [{{ controllerNamespace }}\{{ controllerName }}::class, 'export'])->name('export');
 });
 

@@ -224,6 +224,7 @@ class CreateInertiaResourceCommand extends Command
         $this->line("    Route::put('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'update'])->name('update');");
         $this->line("    Route::delete('/{id}', [{$controllerNamespace}\\{$controllerName}::class, 'destroy'])->name('destroy');");
         $this->line("    Route::post('/bulk-action', [{$controllerNamespace}\\{$controllerName}::class, 'bulkAction'])->name('bulk-action');");
+        $this->line("    Route::post('/export', [{$controllerNamespace}\\{$controllerName}::class, 'export'])->name('export');");
         $this->line('});');
         $this->newLine();
     }
