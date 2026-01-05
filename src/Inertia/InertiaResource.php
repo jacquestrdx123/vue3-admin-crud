@@ -62,12 +62,6 @@ abstract class InertiaResource
 
     protected static ?string $slug = null;
 
-    protected static ?string $navigationGroup = null;
-
-    protected static ?string $navigationIcon = null;
-
-    protected static ?int $navigationSort = null;
-
     protected static string $indexPage = 'Resources/Index';
 
     protected static string $createPage = 'Resources/Create';
@@ -398,53 +392,6 @@ abstract class InertiaResource
     public static function getSlug(): ?string
     {
         return static::$slug ?? null;
-    }
-
-    public static function getNavigationGroup(): ?string
-    {
-        return static::$navigationGroup ?? 'Other';
-    }
-
-    public static function getNavigationIcon(): ?string
-    {
-        return static::$navigationIcon ?? 'heroicon-o-cube';
-    }
-
-    public static function getNavigationSort(): int
-    {
-        return static::$navigationSort ?? 999;
-    }
-
-    public static function canViewInNavigation(): bool
-    {
-        // Check if user is authenticated
-        /** @var Authenticatable|null $user */
-        $user = request()->user();
-        if (! $user) {
-            return false;
-        }
-
-        if (! $user instanceof Authorizable) {
-            return false;
-        }
-
-        // Check if user is a customer (if customer model is configured)
-        $customerModel = config('inertia-resource.customer_model');
-        if ($customerModel && $user instanceof $customerModel) {
-            return false;
-        }
-
-        // If no model is defined, show the resource
-        $model = static::getModel();
-        if (! $model) {
-            return true;
-        }
-
-        // Check permission
-        $modelName = class_basename($model);
-        $permission = 'view_any_'.\Illuminate\Support\Str::snake($modelName);
-
-        return $user->can($permission);
     }
 }
 

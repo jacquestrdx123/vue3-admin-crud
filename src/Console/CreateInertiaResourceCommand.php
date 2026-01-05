@@ -131,97 +131,6 @@ class CreateInertiaResourceCommand extends Command
             );
         }
 
-        // Add default columns and form fields for MenuGroup resource
-        if ($modelName === 'MenuGroup') {
-            // Add imports for additional column and field types
-            $stub = str_replace(
-                "use InertiaResource\Columns\TextColumn;\nuse InertiaResource\FormFields\TextField;",
-                "use InertiaResource\Columns\TextColumn;\nuse InertiaResource\Columns\BooleanColumn;\nuse InertiaResource\Columns\GenericColumn;\nuse InertiaResource\FormFields\TextField;\nuse InertiaResource\FormFields\NumberField;\nuse InertiaResource\FormFields\ToggleField;",
-                $stub
-            );
-
-            // Generate columns
-            $columnsSection = "                TextColumn::make('id', 'ID'),\n";
-            $columnsSection .= "                TextColumn::make('key', 'Key'),\n";
-            $columnsSection .= "                TextColumn::make('label', 'Label'),\n";
-            $columnsSection .= "                TextColumn::make('icon', 'Icon'),\n";
-            $columnsSection .= "                GenericColumn::make('sort_order', 'Sort Order'),\n";
-            $columnsSection .= "                BooleanColumn::make('is_active', 'Active'),\n";
-            $columnsSection .= '                // Add your columns here';
-
-            $stub = preg_replace(
-                "/TextColumn::make\('id', 'ID'\),\s*\n\s*\/\/ Add your columns here/",
-                $columnsSection,
-                $stub
-            );
-
-            // Generate form fields
-            $formFieldsSection = "            TextField::make('key', 'Key')->required(),\n";
-            $formFieldsSection .= "            TextField::make('label', 'Label')->required(),\n";
-            $formFieldsSection .= "            TextField::make('icon', 'Icon'),\n";
-            $formFieldsSection .= "            NumberField::make('sort_order', 'Sort Order')->default(0),\n";
-            $formFieldsSection .= "            ToggleField::make('is_active', 'Active')->default(true),";
-
-            $stub = preg_replace(
-                "/\/\/ Add your form fields here\s*\n\s*\/\/ TextField::make\('name', 'Name'\)->required\(\),/",
-                $formFieldsSection,
-                $stub
-            );
-        }
-
-        // Add default columns and form fields for MenuItem resource
-        if ($modelName === 'MenuItem') {
-            // Add imports for additional column and field types
-            $stub = str_replace(
-                "use InertiaResource\Columns\TextColumn;\nuse InertiaResource\FormFields\TextField;",
-                "use InertiaResource\Columns\TextColumn;\nuse InertiaResource\Columns\BooleanColumn;\nuse InertiaResource\Columns\GenericColumn;\nuse InertiaResource\FormFields\TextField;\nuse InertiaResource\FormFields\NumberField;\nuse InertiaResource\FormFields\ToggleField;\nuse InertiaResource\FormFields\SelectField;",
-                $stub
-            );
-
-            // Generate columns
-            $columnsSection = "                TextColumn::make('id', 'ID'),\n";
-            $columnsSection .= "                GenericColumn::make('menu_group_id', 'Menu Group'),\n";
-            $columnsSection .= "                GenericColumn::make('parent_id', 'Parent'),\n";
-            $columnsSection .= "                TextColumn::make('key', 'Key'),\n";
-            $columnsSection .= "                TextColumn::make('label', 'Label'),\n";
-            $columnsSection .= "                TextColumn::make('url', 'URL'),\n";
-            $columnsSection .= "                TextColumn::make('route', 'Route'),\n";
-            $columnsSection .= "                TextColumn::make('icon', 'Icon'),\n";
-            $columnsSection .= "                TextColumn::make('permission_name', 'Permission'),\n";
-            $columnsSection .= "                GenericColumn::make('sort_order', 'Sort Order'),\n";
-            $columnsSection .= "                BooleanColumn::make('is_active', 'Active'),\n";
-            $columnsSection .= "                BooleanColumn::make('is_group_header', 'Group Header'),\n";
-            $columnsSection .= '                // Add your columns here';
-
-            $stub = preg_replace(
-                "/TextColumn::make\('id', 'ID'\),\s*\n\s*\/\/ Add your columns here/",
-                $columnsSection,
-                $stub
-            );
-
-            // Generate form fields
-            $formFieldsSection = "            SelectField::make('menu_group_id', 'Menu Group')\n";
-            $formFieldsSection .= "                ->options([])\n";
-            $formFieldsSection .= "                ->required(),\n";
-            $formFieldsSection .= "            SelectField::make('parent_id', 'Parent')\n";
-            $formFieldsSection .= "                ->options([]),\n";
-            $formFieldsSection .= "            TextField::make('key', 'Key')->required(),\n";
-            $formFieldsSection .= "            TextField::make('label', 'Label')->required(),\n";
-            $formFieldsSection .= "            TextField::make('url', 'URL'),\n";
-            $formFieldsSection .= "            TextField::make('route', 'Route'),\n";
-            $formFieldsSection .= "            TextField::make('icon', 'Icon'),\n";
-            $formFieldsSection .= "            TextField::make('permission_name', 'Permission'),\n";
-            $formFieldsSection .= "            NumberField::make('sort_order', 'Sort Order')->default(0),\n";
-            $formFieldsSection .= "            ToggleField::make('is_active', 'Active')->default(true),\n";
-            $formFieldsSection .= "            ToggleField::make('is_group_header', 'Group Header')->default(false),";
-
-            $stub = preg_replace(
-                "/\/\/ Add your form fields here\s*\n\s*\/\/ TextField::make\('name', 'Name'\)->required\(\),/",
-                $formFieldsSection,
-                $stub
-            );
-        }
-
         File::put($filePath, $stub);
         $this->info("✅ Created {$resourceName}.php");
     }
@@ -249,7 +158,8 @@ class CreateInertiaResourceCommand extends Command
         $stub = str_replace('{{ model }}', $model, $stub);
         $stub = str_replace('{{ modelName }}', $modelName, $stub);
         $stub = str_replace('{{ routePrefix }}', $slug, $stub);
-        $stub = str_replace('{{ routeName }}', "admin.{$slug}", $stub);
+        $routePrefix = config('inertia-resource.route_prefix', 'vue');
+        $stub = str_replace('{{ routeName }}', "{$routePrefix}.{$slug}", $stub);
 
         File::put($filePath, $stub);
         $this->info("✅ Created {$controllerName}.php");
@@ -261,70 +171,38 @@ class CreateInertiaResourceCommand extends Command
     protected function generateRoutes(string $modelName, string $controllerName, string $controllerNamespace, string $slug): void
     {
         $routesPath = base_path('routes');
-        $adminRoutesFile = "{$routesPath}/admin.php";
+        $webRoutesFile = "{$routesPath}/web.php";
 
-        // Check if admin.php exists, if not, warn user
-        if (! File::exists($adminRoutesFile)) {
-            $this->warn("⚠️  Could not find routes/admin.php file. Please run 'php artisan vue-admin-panel:install' first.");
+        // Check if web.php exists, if not, warn user
+        if (! File::exists($webRoutesFile)) {
+            $this->warn('⚠️  Could not find routes/web.php file.');
             $this->displayRoutes($modelName, $controllerName, $controllerNamespace, $slug);
 
             return;
         }
 
         $stub = File::get(__DIR__.'/../../stubs/routes.stub');
+        $routePrefix = config('inertia-resource.route_prefix', 'vue');
         $stub = str_replace('{{ routePrefix }}', $slug, $stub);
         $stub = str_replace('{{ controllerNamespace }}', $controllerNamespace, $stub);
         $stub = str_replace('{{ controllerName }}', $controllerName, $stub);
-        $stub = str_replace('{{ routeName }}', "admin.{$slug}", $stub);
+        $stub = str_replace('{{ routeName }}', "{$routePrefix}.{$slug}", $stub);
 
-        $routesContent = File::get($adminRoutesFile);
+        $routesContent = File::get($webRoutesFile);
 
-        // Check if routes already exist in admin.php
+        // Check if routes already exist in web.php
         if (strpos($routesContent, "Route::prefix('{$slug}')") !== false) {
-            $this->warn("⚠️  Routes for '{$slug}' already exist in routes/admin.php. Skipping route generation.");
+            $this->warn("⚠️  Routes for '{$slug}' already exist in routes/web.php. Skipping route generation.");
             $this->displayRoutes($modelName, $controllerName, $controllerNamespace, $slug);
 
             return;
         }
 
-        // Find the protected admin routes group and add routes inside it
-        // Look for the closing of the protected admin routes group (after logout route)
-        // The structure is: protected group closes with "    });" then admin prefix closes with "});"
-        $insertPosition = strrpos($routesContent, "        })->name('logout');\n");
+        // Add routes to web.php - append to end of file
+        $routesContent .= "\n\n".$stub;
 
-        if ($insertPosition !== false) {
-            // Insert after logout route, before closing of protected admin routes group
-            // Need to add proper indentation (8 spaces) to match the protected group indentation
-            $indentedStub = preg_replace('/^/m', '        ', $stub);
-            $beforeLogout = substr($routesContent, 0, $insertPosition + strlen("        })->name('logout');\n"));
-            $afterLogout = substr($routesContent, $insertPosition + strlen("        })->name('logout');\n"));
-            $routesContent = $beforeLogout."        \n".$indentedStub."\n".$afterLogout;
-        } else {
-            // Fallback: try to find the protected middleware group closing before admin prefix closes
-            $insertPosition = strrpos($routesContent, "    });\n});\n\n// API routes");
-            if ($insertPosition !== false) {
-                // Insert before the closing of protected admin routes group
-                // Need to add proper indentation (8 spaces)
-                $indentedStub = preg_replace('/^/m', '        ', $stub);
-                $beforeClose = substr($routesContent, 0, $insertPosition + strlen("    });\n"));
-                $afterClose = substr($routesContent, $insertPosition + strlen("    });\n"));
-                $routesContent = $beforeClose."\n".$indentedStub."\n".$afterClose;
-            } else {
-                // Last fallback: try to find before API routes section (outside admin prefix)
-                $insertPosition = strrpos($routesContent, "});\n\n// API routes for column preferences");
-                if ($insertPosition !== false) {
-                    $beforeApi = substr($routesContent, 0, $insertPosition);
-                    $afterApi = substr($routesContent, $insertPosition);
-                    $routesContent = $beforeApi."\n".$stub."\n".$afterApi;
-                } else {
-                    // Final fallback: append to end of file
-                    $routesContent .= "\n\n".$stub;
-                }
-            }
-        }
-
-        File::put($adminRoutesFile, $routesContent);
-        $this->info('✅ Added routes to routes/admin.php');
+        File::put($webRoutesFile, $routesContent);
+        $this->info('✅ Added routes to routes/web.php');
     }
 
     /**
@@ -332,11 +210,12 @@ class CreateInertiaResourceCommand extends Command
      */
     protected function displayRoutes(string $modelName, string $controllerName, string $controllerNamespace, string $slug): void
     {
+        $routePrefix = config('inertia-resource.route_prefix', 'vue');
         $this->newLine();
-        $this->comment('Add these routes to your routes/admin.php file inside the admin prefix group:');
+        $this->comment('Add these routes to your routes/web.php file:');
         $this->newLine();
         $this->line("// {$slug} routes");
-        $this->line("Route::prefix('{$slug}')->name('{$slug}.')->middleware([App\\Http\\Middleware\\AuthenticateAdmin::class])->group(function () {");
+        $this->line("Route::prefix('{$slug}')->name('{$routePrefix}.{$slug}.')->group(function () {");
         $this->line("    Route::get('/', [{$controllerNamespace}\\{$controllerName}::class, 'index'])->name('index');");
         $this->line("    Route::get('/create', [{$controllerNamespace}\\{$controllerName}::class, 'create'])->name('create');");
         $this->line("    Route::post('/', [{$controllerNamespace}\\{$controllerName}::class, 'store'])->name('store');");

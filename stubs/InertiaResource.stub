@@ -14,12 +14,6 @@ class {{ resourceName }} extends InertiaResource
 
     protected static ?string $slug = '{{ slug }}';
 
-    protected static ?string $navigationGroup = null;
-
-    protected static ?string $navigationIcon = 'heroicon-o-cube';
-
-    protected static ?int $navigationSort = 999;
-
     protected static string $indexPage = '{{ vuePagePath }}/Index';
 
     protected static string $createPage = '{{ vuePagePath }}/Create';

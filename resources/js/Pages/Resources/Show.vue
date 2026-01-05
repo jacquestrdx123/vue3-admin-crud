@@ -1,76 +1,73 @@
 <template>
-  <AdminLayout>
-    <div class="py-6">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="mb-6 flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ title || 'Resource Details' }}</h1>
-          </div>
-          <div class="flex items-center gap-3">
-            <Link
-              :href="getEditRoute()"
-              class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-ciba-green/90"
-            >
-              Edit
-            </Link>
-            <button
-              @click="deleteItem"
-              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-            >
-              Delete
-            </button>
-          </div>
+  <div class="py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ title || 'Resource Details' }}</h1>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-2">
-            <Card title="Details">
-              <dl class="grid grid-cols-2 gap-4">
-                <template v-for="field in fields" :key="field.name">
-                  <div :class="field.type === 'textarea' ? 'col-span-2' : ''">
-                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ field.label }}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">
-                      <span v-if="field.type === 'boolean'">
-                        <Badge :color="item[field.name] ? 'green' : 'gray'">
-                          {{ item[field.name] ? 'Yes' : 'No' }}
-                        </Badge>
-                      </span>
-                      <span v-else-if="field.type === 'date'">{{ formatDate(item[field.name]) }}</span>
-                      <span v-else-if="field.type === 'money'">{{ formatMoney(item[field.name]) }}</span>
-                      <span v-else :class="field.type === 'textarea' ? 'whitespace-pre-wrap' : ''">
-                        {{ item[field.name] || '-' }}
-                      </span>
-                    </dd>
-                  </div>
-                </template>
-              </dl>
-            </Card>
-          </div>
-          <div>
-            <Card title="Actions">
-              <div class="space-y-2">
-                <Link
-                  :href="getEditRoute()"
-                  class="block w-full px-4 py-2 text-sm text-center text-white bg-indigo-600 rounded-md hover:bg-ciba-green/90"
-                >
-                  Edit
-                </Link>
-                <button
-                  @click="deleteItem"
-                  class="block w-full px-4 py-2 text-sm text-center text-white bg-red-600 rounded-md hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              </div>
-            </Card>
-          </div>
+        <div class="flex items-center gap-3">
+          <Link
+            :href="getEditRoute()"
+            class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-ciba-green/90"
+          >
+            Edit
+          </Link>
+          <button
+            @click="deleteItem"
+            class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+          <Card title="Details">
+            <dl class="grid grid-cols-2 gap-4">
+              <template v-for="field in fields" :key="field.name">
+                <div :class="field.type === 'textarea' ? 'col-span-2' : ''">
+                  <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ field.label }}</dt>
+                  <dd class="mt-1 text-sm text-gray-900 dark:text-white">
+                    <span v-if="field.type === 'boolean'">
+                      <Badge :color="item[field.name] ? 'green' : 'gray'">
+                        {{ item[field.name] ? 'Yes' : 'No' }}
+                      </Badge>
+                    </span>
+                    <span v-else-if="field.type === 'date'">{{ formatDate(item[field.name]) }}</span>
+                    <span v-else-if="field.type === 'money'">{{ formatMoney(item[field.name]) }}</span>
+                    <span v-else :class="field.type === 'textarea' ? 'whitespace-pre-wrap' : ''">
+                      {{ item[field.name] || '-' }}
+                    </span>
+                  </dd>
+                </div>
+              </template>
+            </dl>
+          </Card>
+        </div>
+        <div>
+          <Card title="Actions">
+            <div class="space-y-2">
+              <Link
+                :href="getEditRoute()"
+                class="block w-full px-4 py-2 text-sm text-center text-white bg-indigo-600 rounded-md hover:bg-ciba-green/90"
+              >
+                Edit
+              </Link>
+              <button
+                @click="deleteItem"
+                class="block w-full px-4 py-2 text-sm text-center text-white bg-red-600 rounded-md hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </Card>
         </div>
       </div>
     </div>
-  </AdminLayout>
+  </div>
 </template>
 <script setup>
 import { router, Link } from '@inertiajs/vue3'
-import AdminLayout from '@/Layouts/AdminLayout.vue'
 import Card from '@/Components/UI/Card.vue'
 import Badge from '@/Components/UI/Badge.vue'
 

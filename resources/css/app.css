@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Custom styles for vue-admin-panel */
+/* Custom styles for vue-inertia-resources */
 @layer base {
     html {
         @apply antialiased;

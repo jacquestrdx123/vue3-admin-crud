@@ -21,8 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Updated AdminLayout to use menu groups and items from MenuBuilder
-- AdminLayout now displays dynamic menu structure from database
+- Updated layouts to use menu groups and items from MenuBuilder
+- Layouts now display dynamic menu structure from database
 - Added support for nested menu items with collapsible sections
 - Menu items are automatically displayed based on MenuBuilder::build() data
 - Added icon support for heroicons in menu items
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- AdminLayout navigation now uses database-driven menu system instead of hardcoded items
+- Layout navigation now uses database-driven menu system instead of hardcoded items
 - Menu items support hierarchical structure with parent/child relationships
 
 ## [2.4.49] - 2024-12-04
@@ -224,14 +224,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed menu item routes to be properly added to routes/admin.php inside protected middleware group
 - Fixed route generation to insert routes with correct indentation inside admin routes group
 - Updated menu system next steps to reference /admin/ routes instead of /vue/
-- Fixed AdminLayout.vue to always update during installation (was being skipped if file existed)
+- Fixed layout files to always update during installation (was being skipped if file existed)
 
 ### Changed
 
 - Standardized UserResource question to match Customer Resource question format
-- Updated AdminLayout to include Menu Groups and Menu Items links in user dropdown menu
-- Added menu items from MenuBuilder config to AdminLayout user dropdown
-- AdminLayout.vue now always updates during installation to ensure users get latest changes
+- Updated layouts to include Menu Groups and Menu Items links in user dropdown menu
+- Added menu items from MenuBuilder config to layout user dropdown
+- Layout files now always update during installation to ensure users get latest changes
 
 ### Improved
 
@@ -267,7 +267,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Database-driven menu system with MenuGroup and MenuItem models
 - MenuBuilder helper class (`InertiaResource\Inertia\MenuBuilder`) to build menu structure from database
 - MenuBuilder Vue component with drag-and-drop functionality for reordering menu groups and items
-- CreateMenuModelsCommand (`vue-admin-panel:create-menu-models`) to generate menu models and migrations
+- CreateMenuModelsCommand (`vue-inertia-resources:create-menu-models`) to generate menu models and migrations
 - Menu configuration options: `menu_group_model`, `menu_item_model`, `menu_show_items_without_permission`
 - Support for permission-based menu item visibility
 - Support for hierarchical menu items with parent/child relationships
@@ -324,13 +324,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added generic `AdminLayout.vue` component with sidebar navigation, top bar, and user menu
-- Added `DashboardLayout.vue` component that wraps AdminLayout with dashboard-specific features
+- Added generic layout components with sidebar navigation, top bar, and user menu
+- Added `DashboardLayout.vue` component with dashboard-specific features
 - Added sample `Dashboard.vue` page with stat cards, recent activity, and quick actions
 - Added `StatCard.vue` component for displaying metrics with icons, colors, and change indicators
-- InstallCommand now automatically creates admin layouts and dashboard during installation
+- InstallCommand now automatically creates layouts and dashboard during installation
 - Added `inertia-resource-layouts` publish tag for layout files
-- Comprehensive documentation for admin layouts and dashboard in README
+- Comprehensive documentation for layouts and dashboard in README
 
 ### Changed
 
@@ -341,7 +341,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `vue-admin-panel:make-user` command to create a user instance in the database instead of generating a User model
+- Updated `vue-inertia-resources:make-user` command to create a user instance in the database instead of generating a User model
 - Command now interactively prompts for:
   - Name
   - Email
@@ -359,7 +359,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added `vue-admin-panel:make-user` artisan command to create a User model with all fields and password confirmation
+- Added `vue-inertia-resources:make-user` artisan command to create a User model with all fields and password confirmation
 - New `CreateUserModelCommand` that generates a complete User model with:
   - Standard authentication fields (name, email, password)
   - Email verification support
@@ -536,7 +536,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Documentation for republishing assets after package updates
-- `vue-admin-panel:publish` command for easy asset republishing
+- `vue-inertia-resources:publish` command for easy asset republishing
 
 ## [1.1.0] - 2024-12-XX
 

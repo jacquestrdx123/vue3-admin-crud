@@ -11,7 +11,7 @@ class PublishAssetsCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'vue-admin-panel:publish 
+    protected $signature = 'vue-inertia-resources:publish 
                             {--force : Overwrite existing files}
                             {--tag= : The tag that has the assets you want to publish}';
 
@@ -20,7 +20,7 @@ class PublishAssetsCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Republish Vue Admin Panel assets after package update';
+    protected $description = 'Republish Vue Inertia Resources assets after package update';
 
     /**
      * Execute the console command.
@@ -30,7 +30,7 @@ class PublishAssetsCommand extends Command
         $force = $this->option('force');
         $tag = $this->option('tag') ?: 'inertia-resource';
 
-        $this->info('📁 Republishing Vue Admin Panel assets...');
+        $this->info('📁 Republishing Vue Inertia Resources assets...');
         $this->newLine();
 
         $options = [
@@ -52,7 +52,7 @@ class PublishAssetsCommand extends Command
         $this->info('✅ Assets republished successfully!');
         $this->newLine();
 
-        if (!$force) {
+        if (! $force) {
             $this->comment('Note: If files already exist, they were not overwritten.');
             $this->comment('Use --force to overwrite existing files with the latest versions.');
         }
@@ -60,4 +60,3 @@ class PublishAssetsCommand extends Command
         return 0;
     }
 }
-

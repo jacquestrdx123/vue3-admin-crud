@@ -1,48 +1,45 @@
 <template>
-  <AdminLayout>
-    <div class="py-6">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="mb-6">
-          <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ title || 'Resources' }}</h1>
-        </div>
-        <BaseDataTable
-          :data="data.data"
-          :columns="columns"
-          :actions="actions"
-          :bulk-actions="bulkActions"
-          :filters="filters"
-          :custom-filters="customFilters"
-          :filter-values="filterValues"
-          :preset-views="presetViews"
-          :active-presets="activePresets"
-          :resource-slug="resourceSlug"
-          :loading="loading"
-          :paginated="false"
-          :server-side="true"
-          @action="handleAction"
-          @bulk-action="handleBulkAction"
-          @sort="handleSort"
-          @filter="handleFilter"
-        />
-        <!-- Pagination -->
-        <Pagination
-          v-if="data.links"
-          :links="{ prev: data.prev_page_url, next: data.next_page_url }"
-          :meta="{
-            from: data.from,
-            to: data.to,
-            total: data.total,
-            links: data.links
-          }"
-        />
+  <div class="py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ title || 'Resources' }}</h1>
       </div>
+      <BaseDataTable
+        :data="data.data"
+        :columns="columns"
+        :actions="actions"
+        :bulk-actions="bulkActions"
+        :filters="filters"
+        :custom-filters="customFilters"
+        :filter-values="filterValues"
+        :preset-views="presetViews"
+        :active-presets="activePresets"
+        :resource-slug="resourceSlug"
+        :loading="loading"
+        :paginated="false"
+        :server-side="true"
+        @action="handleAction"
+        @bulk-action="handleBulkAction"
+        @sort="handleSort"
+        @filter="handleFilter"
+      />
+      <!-- Pagination -->
+      <Pagination
+        v-if="data.links"
+        :links="{ prev: data.prev_page_url, next: data.next_page_url }"
+        :meta="{
+          from: data.from,
+          to: data.to,
+          total: data.total,
+          links: data.links
+        }"
+      />
     </div>
-  </AdminLayout>
+  </div>
 </template>
 <script setup>
 import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
-import AdminLayout from '@/Layouts/AdminLayout.vue'
 import BaseDataTable from '@/Components/Table/BaseDataTable.vue'
 import Pagination from '@/Components/UI/Pagination.vue'
 

@@ -1,7 +1,7 @@
 {
-  "name": "vue-admin-panel",
+  "name": "vue-inertia-resources",
   "version": "1.0.0",
-  "description": "Vue Admin Panel - Laravel package dependencies",
+  "description": "Vue Inertia Resources - Laravel package dependencies",
   "private": true,
   "type": "module",
   "scripts": {

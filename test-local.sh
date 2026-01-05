@@ -6,7 +6,7 @@
 
 PACKAGE_DIR="/Users/jacquestredoux/PhpstormProjects/composer-packages/vue-admin-panel"
 TEST_PROJECT="/Users/jacquestredoux/PhpstormProjects/composer-packages/vue-admin-panel/fresh-laravel-12"
-VENDOR_DIR="$TEST_PROJECT/vendor/jacquestrdx123/vue3-admin-crud"
+VENDOR_DIR="$TEST_PROJECT/vendor/jacquestrdx123/vue-inertia-resources"
 
 echo "🚀 Copying package files to test project..."
 

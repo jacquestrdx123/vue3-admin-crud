@@ -13,29 +13,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Use Customers
-    |--------------------------------------------------------------------------
-    |
-    | Enable customer functionality. When enabled, a customer login page will be
-    | available and customers can access the customer portal.
-    |
-    */
-    'use_customers' => false,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Customer Model (Optional)
-    |--------------------------------------------------------------------------
-    |
-    | If your application has a separate Customer model (e.g., for a customer portal),
-    | specify it here. Customers will be excluded from admin navigation.
-    | Only used when 'use_customers' is set to true.
-    |
-    */
-    'customer_model' => null,
-
-    /*
-    |--------------------------------------------------------------------------
     | Column Preference Model (Optional)
     |--------------------------------------------------------------------------
     |
@@ -45,31 +22,6 @@ return [
     |
     */
     'column_preference_model' => null,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Menu Models (Optional)
-    |--------------------------------------------------------------------------
-    |
-    | If you want to use the database-driven menu system, specify the model
-    | classes here. These models will be used by MenuBuilder to build the
-    | navigation menu from the database.
-    |
-    */
-    'menu_group_model' => \App\Models\MenuGroup::class,
-    'menu_item_model' => \App\Models\MenuItem::class,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Menu Permission Behavior
-    |--------------------------------------------------------------------------
-    |
-    | Controls how menu items without a permission_name are handled:
-    | - true: Items without permission_name are shown to all users (default)
-    | - false: Items without permission_name are hidden from all users
-    |
-    */
-    'menu_show_items_without_permission' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -126,7 +78,7 @@ return [
     | Route Prefix
     |--------------------------------------------------------------------------
     |
-    | The prefix used for Inertia resource routes (e.g., 'vue' for 'vue.customers.index').
+    | The prefix used for Inertia resource routes (e.g., 'vue' for 'vue.users.index').
     |
     */
     'route_prefix' => 'vue',

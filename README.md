@@ -1,4 +1,4 @@
-# Vue Admin Panel
+# Vue Inertia Resources
 
 A Filament-like resource system for Inertia.js applications. This package provides a complete CRUD interface system with tables, forms, filters, actions, and more. Includes Vue 3 components with Tailwind CSS 4 support.
 
@@ -20,7 +20,7 @@ A Filament-like resource system for Inertia.js applications. This package provid
 Simply run:
 
 ```bash
-composer require jacquestrdx123/vue3-admin-crud
+composer require jacquestrdx123/vue-inertia-resources
 ```
 
 This will automatically:
@@ -33,11 +33,9 @@ This will automatically:
 
 After the Composer installation, run:
 
-##Before Running the Installer make sure you have enabled Customers inside the config/inertia-resource.php file.
-
 ```bash
 # Run the installer (publishes assets, updates package.json, and runs npm install)
-php artisan vue-admin-panel:install
+php artisan vue-inertia-resources:install
 ```
 
 The installer will automatically:
@@ -46,10 +44,6 @@ The installer will automatically:
 - ✅ Run `npm install` to install all dependencies
 - ✅ Publish all package assets (components, config, migrations)
 - ✅ Set up Tailwind CSS configuration
-- ✅ Create admin login page (`resources/js/Pages/Auth/AdminLogin.vue`)
-- ✅ Create admin layouts (`AdminLayout.vue`, `DashboardLayout.vue`)
-- ✅ Create dashboard page (`resources/js/Pages/Dashboard.vue`)
-- ✅ Add admin routes to `routes/web.php` with `/admin` prefix group
 
 > **Note**: If you encounter "Cannot find package 'laravel'" errors, make sure `npm install` completed successfully. The `laravel-vite-plugin` package is required for Vite to work with Laravel.
 
@@ -64,8 +58,6 @@ php artisan vendor:publish --tag=inertia-resource-config      # Configuration on
 php artisan vendor:publish --tag=inertia-resource-migrations  # Migrations only
 php artisan vendor:publish --tag=inertia-resource-components   # Vue components only
 php artisan vendor:publish --tag=inertia-resource-tailwind    # Tailwind config only
-php artisan vendor:publish --tag=inertia-resource-layouts     # Admin layouts and dashboard only
-php artisan vendor:publish --tag=inertia-resource-login-pages  # Login pages only
 ```
 
 ### Vite Configuration
@@ -183,7 +175,7 @@ When you update the package to a new version, you may need to republish assets t
 After updating the package via Composer:
 
 ```bash
-composer update jacquestrdx123/vue3-admin-crud
+composer update jacquestrdx123/vue-inertia-resources
 ```
 
 Republish assets using one of these methods:
@@ -192,10 +184,10 @@ Republish assets using one of these methods:
 
 ```bash
 # Republish all assets (will skip existing files)
-php artisan vue-admin-panel:publish
+php artisan vue-inertia-resources:publish
 
 # Force republish all assets (overwrites existing files)
-php artisan vue-admin-panel:publish --force
+php artisan vue-inertia-resources:publish --force
 ```
 
 #### Option 2: Use Laravel's Vendor Publish Command
@@ -234,7 +226,7 @@ If you're using the package's CSS file, import it in your main CSS:
 
 ```css
 @import "tailwindcss";
-@import "./vue-admin-panel.css";
+@import "./vue-inertia-resources.css";
 ```
 
 ### Import Vue Components
@@ -262,206 +254,12 @@ Configure your models and paths in `config/inertia-resource.php`:
 ```php
 return [
     'user_model' => \App\Models\User::class,
-    'customer_model' => null, // Optional
     'column_preference_model' => \InertiaResource\Models\UserColumnPreference::class, // Optional
     'resource_paths' => [
         app_path('Support/Inertia/Resources'),
     ],
     'route_prefix' => 'vue',
 ];
-```
-
-## Admin Authentication
-
-The installer automatically creates admin authentication routes. After running `php artisan vue-admin-panel:install`, you'll have:
-
-- **Login Page**: `resources/js/Pages/Auth/AdminLogin.vue`
-- **Admin Routes**: Automatically added to `routes/web.php`
-
-### Admin Routes
-
-The installer creates the following routes in your `routes/web.php`:
-
-```php
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::middleware(['guest'])->group(function () {
-        Route::get('/login', function () {
-            return Inertia::render('Auth/AdminLogin');
-        })->name('login');
-
-        Route::post('/login', function (Request $request) {
-            // Authentication logic
-        })->name('login');
-    });
-});
-```
-
-**Available Routes:**
-
-- `GET /admin/login` - Display the admin login page
-- `POST /admin/login` - Handle admin authentication
-
-**Route Names:**
-
-- `admin.login` - Both GET and POST routes use this name
-
-### Customizing Admin Authentication
-
-You can customize the authentication logic by modifying the POST route in `routes/web.php` or by creating a dedicated `AdminAuthController`:
-
-```php
-// routes/web.php
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::middleware(['guest'])->group(function () {
-        Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
-        Route::post('/login', [AdminAuthController::class, 'login'])->name('login');
-    });
-
-    // Protected admin routes
-    Route::middleware(['auth'])->group(function () {
-        // Your admin routes here
-    });
-});
-```
-
-## Admin Layout and Dashboard
-
-The installer automatically creates a generic admin layout and dashboard to get you started quickly.
-
-### Admin Layout
-
-The `AdminLayout.vue` component provides a complete admin interface with:
-
-- **Sidebar Navigation**: Collapsible sidebar with navigation menu
-- **Top Bar**: Header with page title and user menu
-- **User Menu**: Dropdown with user info and logout option
-- **Responsive Design**: Mobile-friendly layout that adapts to screen size
-- **Dark Mode Support**: Built-in dark mode styling
-
-**Location**: `resources/js/Layouts/AdminLayout.vue`
-
-### Dashboard Layout
-
-The `DashboardLayout.vue` component wraps `AdminLayout` and provides:
-
-- **Dashboard Header**: Title and description section
-- **Slots**: Flexible slots for filters, stats, and main content
-- **Consistent Styling**: Pre-configured spacing and layout
-
-**Location**: `resources/js/Layouts/DashboardLayout.vue`
-
-### Dashboard Page
-
-A sample dashboard page is created with:
-
-- **Stat Cards**: Display key metrics (Total Users, Revenue, Orders, Growth)
-- **Recent Activity**: List of recent activities
-- **Quick Actions**: Grid of common actions
-
-**Location**: `resources/js/Pages/Dashboard.vue`
-
-### Using the Layouts
-
-#### Basic Usage
-
-```vue
-<template>
-  <AdminLayout>
-    <div class="p-6">
-      <h1 class="text-2xl font-bold">My Admin Page</h1>
-      <!-- Your content here -->
-    </div>
-  </AdminLayout>
-</template>
-
-<script setup>
-import AdminLayout from "@/Layouts/AdminLayout.vue";
-</script>
-```
-
-#### Dashboard Layout Usage
-
-```vue
-<template>
-  <DashboardLayout
-    title="Dashboard"
-    description="Welcome to your admin dashboard"
-  >
-    <!-- Stats Section -->
-    <template #stats>
-      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Total Users"
-          value="1,234"
-          color="indigo"
-          :change="12"
-        />
-        <!-- More stat cards -->
-      </div>
-    </template>
-
-    <!-- Main Content -->
-    <div>
-      <!-- Your dashboard content -->
-    </div>
-  </DashboardLayout>
-</template>
-
-<script setup>
-import DashboardLayout from "@/Layouts/DashboardLayout.vue";
-import StatCard from "@/Components/Dashboard/StatCard.vue";
-</script>
-```
-
-### Customizing the Layouts
-
-You can customize the layouts by editing the files directly:
-
-- **Navigation Items**: Edit the `navigation` computed property in `AdminLayout.vue`
-- **Styling**: Modify Tailwind classes to match your brand
-- **Components**: Replace or extend components as needed
-
-### StatCard Component
-
-The `StatCard` component is included for displaying metrics:
-
-**Location**: `resources/js/Components/Dashboard/StatCard.vue`
-
-**Props**:
-
-- `label` (required): The stat label
-- `value` (required): The stat value (number or string)
-- `icon`: SVG path string for icon
-- `color`: Color theme (indigo, green, blue, red, purple, yellow, pink)
-- `change`: Percentage change (positive or negative)
-- `description`: Additional description text
-- `format`: Format type (number, currency, percentage)
-- `currency`: Currency symbol (default: '$')
-
-**Example**:
-
-```vue
-<StatCard
-  label="Revenue"
-  value="45,231"
-  format="currency"
-  currency="$"
-  color="green"
-  :change="8"
-  description="This month"
-/>
-```
-
-### Publishing Layouts
-
-If you need to republish the layout files:
-
-```bash
-# Publish layouts only
-php artisan vendor:publish --tag=inertia-resource-layouts
-
-# Or publish all assets
-php artisan vendor:publish --tag=inertia-resource
 ```
 
 ## Optional: Column Preferences
@@ -505,7 +303,7 @@ php artisan make:inertia-resource User --all
 **Command Options:**
 
 - `--controller` - Generate the controller class
-- `--routes` - Generate route definitions (wrapped in `/admin` prefix)
+- `--routes` - Generate route definitions
 - `--vue` - Generate Vue page files (Index, Create, Edit, Show)
 - `--all` - Generate controller, routes, and Vue files
 
@@ -513,7 +311,7 @@ php artisan make:inertia-resource User --all
 
 - **InertiaResource**: `app/Support/Inertia/Resources/{Model}Resource.php`
 - **Controller**: `app/Http/Controllers/{Model}Controller.php` (if `--controller` or `--all`)
-- **Routes**: Added to `routes/web.php` wrapped in `/admin` prefix (if `--routes` or `--all`)
+- **Routes**: Added to `routes/web.php` (if `--routes` or `--all`)
 - **Vue Pages**: `resources/js/Pages/Resources/{Model}/Index.vue`, `Create.vue`, `Edit.vue`, `Show.vue` (if `--vue` or `--all`)
 
 **Example:**
@@ -715,7 +513,7 @@ composer test-coverage
 The package uses Pest PHP for testing. Tests are located in the `tests/` directory.
 
 ```bash
-cd vue-admin-panel
+cd vue-inertia-resources
 composer install
 composer test
 ```
@@ -723,7 +521,7 @@ composer test
 ### Package Structure
 
 ```
-vue-admin-panel/
+vue-inertia-resources/
 ├── src/                    # PHP source files
 │   ├── Actions/            # Action classes
 │   ├── Columns/           # Column classes
@@ -752,4 +550,4 @@ For detailed documentation, see the [PACKAGE_SUMMARY.md](PACKAGE_SUMMARY.md) fil
 
 MIT
 
-# vue3-admin-crud
+# vue-inertia-resources

@@ -12,7 +12,7 @@ class CreateUserModelCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'vue-admin-panel:make-user';
+    protected $signature = 'vue-inertia-resources:make-user';
 
     /**
      * The console command description.

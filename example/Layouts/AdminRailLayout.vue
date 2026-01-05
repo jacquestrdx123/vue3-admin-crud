@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-layout min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div class="rail-layout min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Sidebar in Rail Mode -->
     <SidebarMenu :rail="true" />
 
@@ -28,7 +28,7 @@ import Breadcrumbs from '@/Components/Navigation/Breadcrumbs.vue'
 </script>
 
 <style scoped>
-.admin-layout {
+.rail-layout {
   display: flex;
 }
 
