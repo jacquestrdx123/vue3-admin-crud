@@ -42,6 +42,7 @@ class InertiaResourceServiceProvider extends ServiceProvider
                 \InertiaResource\Console\CreateInertiaResourceCommand::class,
                 \InertiaResource\Console\CreateUserModelCommand::class,
                 \InertiaResource\Console\PublishAssetsCommand::class,
+                \InertiaResource\Console\CopyComponentsCommand::class,
                 \InertiaResource\Console\RecreateLayoutsCommand::class,
                 \InertiaResource\Console\SetupMiddlewareCommand::class,
             ]);
