@@ -256,8 +256,8 @@ class CreateInertiaResourceCommand extends Command
         }
 
         $pages = ['Index', 'Create', 'Edit', 'Show'];
-        $routePrefix = config('inertia-resource.route_prefix', 'vue');
-        $routeBase = "{$routePrefix}.{$slug}";
+        // Use just the slug for routes (without the route prefix)
+        $routeBase = $slug;
 
         foreach ($pages as $page) {
             $fileName = "{$page}.vue";

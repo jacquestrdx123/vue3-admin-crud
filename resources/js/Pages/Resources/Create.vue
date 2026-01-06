@@ -4,8 +4,8 @@
       <div class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ title || 'Create Resource' }}</h1>
       </div>
-      <div class="bg-white dark:bg-gray-800 shadow-sm rounded-lg">
-        <form @submit.prevent="submit" class="p-6">
+      <FormContainer>
+        <form @submit.prevent="submit">
           <div class="grid grid-cols-12 gap-6">
             <template v-for="field in fields" :key="field.name">
               <component
@@ -30,12 +30,13 @@
             </button>
           </div>
         </form>
-      </div>
+      </FormContainer>
     </div>
   </div>
 </template>
 <script setup>
 import { useForm, Link } from '@inertiajs/vue3'
+import FormContainer from '@/Components/Form/FormContainer.vue'
 import TextField from '@/Components/Form/TextField.vue'
 import SelectField from '@/Components/Form/SelectField.vue'
 import TextareaField from '@/Components/Form/TextareaField.vue'

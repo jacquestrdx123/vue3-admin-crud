@@ -16,7 +16,7 @@ class {{ controllerName }} extends BaseResourceController
 
     protected function getModel(): string
     {
-        return {{ model }}::class;
+        return {{ modelName }}::class;
     }
 
     protected function getIndexRoute(): string

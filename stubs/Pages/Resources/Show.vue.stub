@@ -7,7 +7,7 @@
         </div>
         <div class="flex items-center gap-3">
           <Link
-            :href="getEditRoute()"
+            :href="route('{{ routeBase }}.edit', itemId)"
             class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-ciba-green/90"
           >
             Edit
@@ -48,7 +48,7 @@
           <Card title="Actions">
             <div class="space-y-2">
               <Link
-                :href="getEditRoute()"
+                :href="route('{{ routeBase }}.edit', itemId)"
                 class="block w-full px-4 py-2 text-sm text-center text-white bg-indigo-600 rounded-md hover:bg-ciba-green/90"
               >
                 Edit
@@ -67,6 +67,7 @@
   </div>
 </template>
 <script setup>
+import { computed } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 // If you need to use defineAsyncComponent, import it from Vue:
 // import { defineAsyncComponent } from 'vue'
@@ -80,6 +81,14 @@ const props = defineProps({
   title: { type: String, default: null }
 })
 
+// Helper function to safely get item ID
+const getItemId = (item) => {
+  return item?.id ?? item?.ID ?? item?.Id ?? item?.uuid ?? item?.UUID ?? null
+}
+
+// Computed property for item ID
+const itemId = computed(() => getItemId(props.item))
+
 const formatDate = (date) => {
   return date ? new Date(date).toLocaleDateString() : '-'
 }
@@ -88,42 +97,14 @@ const formatMoney = (amount) => {
   return amount ? `R ${parseFloat(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}` : 'R 0.00'
 }
 
-const getDestroyRoute = () => {
-  if (!props.resourceSlug) {
-    const currentRoute = route().current()
-    if (currentRoute) {
-      const parts = currentRoute.split('.')
-      if (parts.length >= 2) {
-        const resource = parts.slice(0, -1).join('.')
-        return `${resource}.destroy`
-      }
-    }
-    return null
-  }
-  return `admin.${props.resourceSlug}.destroy`
-}
-
-const getEditRoute = () => {
-  if (!props.resourceSlug) {
-    const currentRoute = route().current()
-    if (currentRoute) {
-      const parts = currentRoute.split('.')
-      if (parts.length >= 2) {
-        const resource = parts.slice(0, -1).join('.')
-        return route(`${resource}.edit`, props.item.id)
-      }
-    }
-    return '#'
-  }
-  return route(`admin.${props.resourceSlug}.edit`, props.item.id)
-}
-
 const deleteItem = () => {
+  if (!itemId.value) {
+    console.error('Item ID not found', props.item)
+    return
+  }
+  
   if (confirm('Are you sure you want to delete this item?')) {
-    const routeName = getDestroyRoute()
-    if (routeName && route(routeName)) {
-      router.delete(route(routeName, props.item.id))
-    }
+    router.delete(route('{{ routeBase }}.destroy', itemId.value))
   }
 }
 </script>

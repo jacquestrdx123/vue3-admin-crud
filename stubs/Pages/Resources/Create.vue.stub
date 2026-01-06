@@ -18,7 +18,7 @@
             </template>
           </div>
           <div class="mt-6 flex items-center justify-end gap-3">
-            <Link :href="getIndexRoute()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
+            <Link :href="route('{{ routeBase }}.index')" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
               Cancel
             </Link>
             <button
@@ -77,43 +77,10 @@ const getFieldComponent = (type) => {
   return map[type] || TextField
 }
 
-const getStoreRoute = () => {
-  if (!props.resourceSlug) {
-    const currentRoute = route().current()
-    if (currentRoute) {
-      const parts = currentRoute.split('.')
-      if (parts.length >= 2) {
-        const resource = parts.slice(0, -1).join('.')
-        return `${resource}.store`
-      }
-    }
-    return null
-  }
-  return `admin.${props.resourceSlug}.store`
-}
-
-const getIndexRoute = () => {
-  if (!props.resourceSlug) {
-    const currentRoute = route().current()
-    if (currentRoute) {
-      const parts = currentRoute.split('.')
-      if (parts.length >= 2) {
-        const resource = parts.slice(0, -1).join('.')
-        return `${resource}.index`
-      }
-    }
-    return '#'
-  }
-  return route(`admin.${props.resourceSlug}.index`)
-}
-
 const submit = () => {
-  const routeName = getStoreRoute()
-  if (routeName && route(routeName)) {
-    form.post(route(routeName), {
+  form.post(route('{{ routeBase }}.store'), {
       preserveScroll: true
     })
-  }
 }
 </script>
 

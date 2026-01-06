@@ -18,7 +18,7 @@
             </template>
           </div>
           <div class="mt-6 flex items-center justify-end gap-3">
-            <Link :href="getIndexRoute()" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
+            <Link :href="route('{{ routeBase }}.index')" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600">
               Cancel
             </Link>
             <button
@@ -60,6 +60,11 @@ props.fields.forEach(field => {
 
 const form = useForm(formData)
 
+// Helper function to safely get item ID
+const getItemId = (item) => {
+  return item?.id ?? item?.ID ?? item?.Id ?? item?.uuid ?? item?.UUID ?? null
+}
+
 const getFieldComponent = (type) => {
   const map = {
     text: TextField,
@@ -78,43 +83,16 @@ const getFieldComponent = (type) => {
   return map[type] || TextField
 }
 
-const getUpdateRoute = () => {
-  if (!props.resourceSlug) {
-    const currentRoute = route().current()
-    if (currentRoute) {
-      const parts = currentRoute.split('.')
-      if (parts.length >= 2) {
-        const resource = parts.slice(0, -1).join('.')
-        return `${resource}.update`
-      }
-    }
-    return null
-  }
-  return `admin.${props.resourceSlug}.update`
-}
-
-const getIndexRoute = () => {
-  if (!props.resourceSlug) {
-    const currentRoute = route().current()
-    if (currentRoute) {
-      const parts = currentRoute.split('.')
-      if (parts.length >= 2) {
-        const resource = parts.slice(0, -1).join('.')
-        return `${resource}.index`
-      }
-    }
-    return '#'
-  }
-  return route(`admin.${props.resourceSlug}.index`)
-}
-
 const submit = () => {
-  const routeName = getUpdateRoute()
-  if (routeName && route(routeName)) {
-    form.put(route(routeName, props.item.id), {
+  const itemId = getItemId(props.item)
+  if (!itemId) {
+    console.error('Item ID not found', props.item)
+    return
+  }
+  
+  form.put(route('{{ routeBase }}.update', itemId), {
       preserveScroll: true
     })
-  }
 }
 </script>
 
