@@ -544,59 +544,69 @@
             ]">
               <div class="relative flex justify-end">
                 <button
+                  :ref="el => { if (openMenuRowKey === getRowKey(row)) menuButtonRef = el }"
                   @click.stop="toggleActionMenu(getRowKey(row), $event)"
                   class="p-2 rounded-md bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 hover:shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
                   :title="`Actions for row ${getRowKey(row)}`"
+                  :data-row-key="getRowKey(row)"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                   </svg>
                 </button>
-                
-                <!-- Actions Dropdown Menu -->
-                <transition
-                  enter-active-class="transition ease-out duration-100"
-                  enter-from-class="transform opacity-0 scale-95"
-                  enter-to-class="transform opacity-100 scale-100"
-                  leave-active-class="transition ease-in duration-75"
-                  leave-from-class="transform opacity-100 scale-100"
-                  leave-to-class="transform opacity-0 scale-95"
-                >
-                  <div
-                    v-if="openMenuRowKey === getRowKey(row)"
-                    data-action-menu
-                    :class="[
-                      'absolute right-0 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-[100]',
-                      menuPosition === 'top' ? 'bottom-full mb-1 origin-bottom-right' : 'top-full mt-1'
-                    ]"
-                    @click.stop
-                  >
-                    <div class="py-1 flex flex-col">
-                      <button
-                        v-for="action in actions"
-                        :key="action.name"
-                        @click="handleActionClick(action, row)"
-                        :class="[
-                          'block w-full text-left px-4 py-2 text-sm transition-all duration-150',
-                          'border border-transparent rounded-md mx-1',
-                          'shadow-sm hover:shadow-md active:shadow-inner',
-                          'hover:scale-[1.02] active:scale-[0.98]',
-                          action.color === 'danger'
-                            ? 'text-red-600 hover:bg-red-50 hover:text-red-900 hover:border-red-200 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:border-red-800'
-                            : 'text-gray-700 hover:bg-gray-100 hover:border-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:border-gray-600'
-                        ]"
-                      >
-                        {{ action.label }}
-                      </button>
-                    </div>
-                  </div>
-                </transition>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- Actions Dropdown Menu (Teleported to body to avoid overflow clipping) -->
+    <Teleport to="body">
+      <transition
+        enter-active-class="transition ease-out duration-100"
+        enter-from-class="transform opacity-0 scale-95"
+        enter-to-class="transform opacity-100 scale-100"
+        leave-active-class="transition ease-in duration-75"
+        leave-from-class="transform opacity-100 scale-100"
+        leave-to-class="transform opacity-0 scale-95"
+      >
+        <div
+          v-if="openMenuRowKey"
+          data-action-menu
+          :style="{
+            position: 'fixed',
+            top: `${menuCoordinates.top}px`,
+            right: `${menuCoordinates.right}px`,
+            zIndex: 9999
+          }"
+          :class="[
+            'w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none',
+            menuPosition === 'top' ? 'origin-bottom-right' : 'origin-top-right'
+          ]"
+          @click.stop
+        >
+          <div class="py-1 flex flex-col">
+            <button
+              v-for="action in actions"
+              :key="action.name"
+              @click="handleActionClick(action, getCurrentRowForMenu())"
+              :class="[
+                'block w-full text-left px-4 py-2 text-sm transition-all duration-150',
+                'border border-transparent rounded-md mx-1',
+                'shadow-sm hover:shadow-md active:shadow-inner',
+                'hover:scale-[1.02] active:scale-[0.98]',
+                action.color === 'danger'
+                  ? 'text-red-600 hover:bg-red-50 hover:text-red-900 hover:border-red-200 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:border-red-800'
+                  : 'text-gray-700 hover:bg-gray-100 hover:border-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:border-gray-600'
+              ]"
+            >
+              {{ action.label }}
+            </button>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
 
     <!-- Pagination -->
     <div v-if="paginated && !isLoading && processedData.length > 0" class="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
@@ -744,6 +754,9 @@ const filterValues = ref({})
 const customFilterValues = ref({})
 const openMenuRowKey = ref(null)
 const menuPosition = ref('bottom') // 'bottom' or 'top'
+const menuCoordinates = ref({ top: 0, right: 0 }) // Fixed position coordinates
+const menuButtonRef = ref(null) // Reference to the button element
+const menuRowData = ref(null) // Store the row data for the open menu
 const selectedPresetKeys = ref(
   props.activePresets && props.activePresets.length > 0
     ? [...props.activePresets]
@@ -1310,13 +1323,26 @@ const toggleActionMenu = (rowKey, event) => {
   if (openMenuRowKey.value === rowKey) {
     openMenuRowKey.value = null
     menuPosition.value = 'bottom' // Reset to default
+    menuCoordinates.value = { top: 0, right: 0 }
+    menuRowData.value = null
+    menuButtonRef.value = null
   } else {
+    // Find and store the row data
+    const row = props.data.find(r => getRowKey(r) === rowKey)
+    menuRowData.value = row
     openMenuRowKey.value = rowKey
     
-    // Calculate if menu should open upward
+    // Store button reference - find the button element
+    const button = event?.target?.closest('button') || event?.target
+    if (button) {
+      menuButtonRef.value = button
+    }
+    
+    // Calculate menu position using fixed positioning
     nextTick(() => {
-      if (event?.target) {
-        const buttonRect = event.target.getBoundingClientRect()
+      const buttonElement = menuButtonRef.value || button
+      if (buttonElement) {
+        const buttonRect = buttonElement.getBoundingClientRect()
         // Calculate approximate menu height based on number of actions
         const itemHeight = 40 // Approximate height per menu item
         const menuPadding = 8 // Top and bottom padding
@@ -1324,19 +1350,36 @@ const toggleActionMenu = (rowKey, event) => {
         const spaceBelow = window.innerHeight - buttonRect.bottom
         const spaceAbove = buttonRect.top
         
+        // Calculate right position (distance from right edge of viewport)
+        const right = window.innerWidth - buttonRect.right
+        
         // If not enough space below but enough space above, flip upward
         if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
           menuPosition.value = 'top'
+          menuCoordinates.value = {
+            top: buttonRect.top - menuHeight - 4, // 4px gap
+            right: right
+          }
         } else {
           menuPosition.value = 'bottom'
+          menuCoordinates.value = {
+            top: buttonRect.bottom + 4, // 4px gap
+            right: right
+          }
         }
       }
     })
   }
 }
 
+const getCurrentRowForMenu = () => {
+  return menuRowData.value
+}
+
 const handleActionClick = (action, row) => {
   openMenuRowKey.value = null
+  menuRowData.value = null
+  menuCoordinates.value = { top: 0, right: 0 }
   handleAction(action, row)
 }
 
@@ -1516,15 +1559,62 @@ const handleClickOutside = (event) => {
     // Close action menu
     openMenuRowKey.value = null
     menuPosition.value = 'bottom' // Reset to default
+    menuRowData.value = null
+    menuCoordinates.value = { top: 0, right: 0 }
   }
+}
+
+// Update menu position on scroll or resize
+const updateMenuPosition = () => {
+  if (!openMenuRowKey.value) {
+    return
+  }
+  
+  // Try to find the button if ref is not available
+  let button = menuButtonRef.value
+  if (!button && openMenuRowKey.value) {
+    button = document.querySelector(`button[data-row-key="${openMenuRowKey.value}"]`)
+  }
+  
+  if (!button) {
+    return
+  }
+  
+  nextTick(() => {
+    const buttonRect = button.getBoundingClientRect()
+    const itemHeight = 40
+    const menuPadding = 8
+    const menuHeight = (props.actions.length * itemHeight) + menuPadding
+    const spaceBelow = window.innerHeight - buttonRect.bottom
+    const spaceAbove = buttonRect.top
+    const right = window.innerWidth - buttonRect.right
+    
+    if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+      menuPosition.value = 'top'
+      menuCoordinates.value = {
+        top: buttonRect.top - menuHeight - 4,
+        right: right
+      }
+    } else {
+      menuPosition.value = 'bottom'
+      menuCoordinates.value = {
+        top: buttonRect.bottom + 4,
+        right: right
+      }
+    }
+  })
 }
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('scroll', updateMenuPosition, true)
+  window.addEventListener('resize', updateMenuPosition)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('scroll', updateMenuPosition, true)
+  window.removeEventListener('resize', updateMenuPosition)
 })
 
 // Column Preferences Methods
@@ -1805,6 +1895,8 @@ watch(() => props.data, () => {
   internalLoading.value = false
   openMenuRowKey.value = null
   menuPosition.value = 'bottom' // Reset to default
+  menuRowData.value = null
+  menuCoordinates.value = { top: 0, right: 0 }
 })
 
 watch(

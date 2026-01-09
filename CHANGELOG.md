@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.24] - 2024-12-XX
+
+### Fixed
+
+- Fixed z-index issues in BaseDataTable action menu dropdown
+- Action menu now uses Teleport to body to avoid overflow clipping
+- Action menu now uses fixed positioning with calculated coordinates
+- Added scroll and resize event listeners to maintain menu position
+- Increased z-index to 9999 to ensure menu appears above all other elements
+
 ## [2.7.2] - 2024-12-XX
 
 ### Changed
