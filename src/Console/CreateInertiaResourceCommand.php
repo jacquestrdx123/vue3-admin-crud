@@ -16,7 +16,7 @@ class CreateInertiaResourceCommand extends Command
     protected $signature = 'make:inertia-resource {model : The model class name (e.g., User, Product)} 
                             {--no-controller : Skip generating the controller}
                             {--no-routes : Skip generating route definitions}
-                            {--vue : Generate Vue page files}
+                            {--no-vue : Skip generating Vue page files}
                             {--all : Generate controller, routes, and Vue files}';
 
     /**
@@ -24,7 +24,7 @@ class CreateInertiaResourceCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Create a new InertiaResource with controller and routes (Vue files optional)';
+    protected $description = 'Create a new InertiaResource with controller, routes, and Vue files';
 
     /**
      * Execute the console command.
@@ -34,7 +34,7 @@ class CreateInertiaResourceCommand extends Command
         $model = $this->argument('model');
         $generateController = $this->option('all') || ! $this->option('no-controller');
         $generateRoutes = $this->option('all') || ! $this->option('no-routes');
-        $generateVue = $this->option('vue') || $this->option('all');
+        $generateVue = $this->option('all') || ! $this->option('no-vue');
 
         // Validate model exists
         if (! class_exists($model)) {
