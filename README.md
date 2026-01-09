@@ -239,6 +239,209 @@ import BaseDataTable from "@/vendor/inertia-resource/Components/Table/BaseDataTa
 import FormBuilder from "@/vendor/inertia-resource/Components/Form/FormBuilder.vue";
 import TextField from "@/vendor/inertia-resource/Components/Form/TextField.vue";
 import SelectField from "@/vendor/inertia-resource/Components/Form/SelectField.vue";
+import CsvImport from "@/vendor/inertia-resource/Components/Form/CsvImport.vue";
+```
+
+## Components
+
+### CSV Import Component
+
+The `CsvImport` component provides a complete CSV import solution with file upload, column mapping, data preview, and example file downloads.
+
+#### Features
+
+- **File Upload**: Drag & drop or click to upload CSV files
+- **Column Mapping**: Automatically detect CSV columns and map them to your data fields
+- **Data Preview**: Preview parsed data before importing
+- **Example Downloads**: Generate example CSV files with correct format
+- **Validation**: File type and size validation
+- **Auto-mapping**: Intelligent column name matching
+
+#### Basic Usage
+
+```vue
+<template>
+  <CsvImport
+    title="Import Customers"
+    description="Upload a CSV file with customer data"
+    :columns="columns"
+    @import="handleImport"
+    @error="handleError"
+  />
+</template>
+
+<script setup>
+import { router } from '@inertiajs/vue3'
+import CsvImport from '@/Components/Form/CsvImport.vue'
+
+const columns = [
+  {
+    key: 'name',
+    label: 'Full Name',
+    required: true,
+    type: 'text'
+  },
+  {
+    key: 'email',
+    label: 'Email Address',
+    required: true,
+    type: 'email'
+  },
+  {
+    key: 'phone',
+    label: 'Phone Number',
+    required: false,
+    type: 'text'
+  },
+  {
+    key: 'birth_date',
+    label: 'Birth Date',
+    required: false,
+    type: 'date',
+    example: '1990-01-15'
+  }
+]
+
+const handleImport = (data) => {
+  // data.file - The uploaded File object
+  // data.data - Array of mapped data objects
+  // data.originalRows - Original CSV rows before mapping
+  // data.mapping - Column mapping object
+  
+  router.post('/admin/customers/import', {
+    data: data.data
+  }, {
+    onSuccess: () => {
+      // Handle success
+    },
+    onError: (errors) => {
+      // Handle errors
+    }
+  })
+}
+
+const handleError = (error) => {
+  console.error('Import error:', error)
+}
+</script>
+```
+
+#### Column Configuration
+
+Each column in the `columns` array can have the following properties:
+
+- `key` (required) - Field identifier used in the mapped data
+- `label` (optional) - Display label (defaults to `key`)
+- `description` (optional) - Help text shown below the label
+- `required` (optional) - Mark column as required (default: `false`)
+- `type` (optional) - Type hint for example generation: `'email'`, `'date'`, `'number'`, `'boolean'`, `'text'`
+- `example` (optional) - Custom example value for the CSV template
+
+#### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `title` | String | `'CSV Import'` | Component title |
+| `description` | String | `null` | Component description |
+| `columns` | Array | `[]` | Column definitions for mapping |
+| `required` | Boolean | `false` | Mark file upload as required |
+| `uploadLabel` | String | `'CSV File'` | File upload label |
+| `maxSize` | Number | `10240` | Maximum file size in KB (default: 10MB) |
+| `importLabel` | String | `'Import'` | Import button label |
+| `cancelLabel` | String | `'Cancel'` | Cancel button label |
+| `showActions` | Boolean | `true` | Show action buttons |
+| `showCancel` | Boolean | `true` | Show cancel button |
+| `exampleFileName` | String | `'example.csv'` | Example file download name |
+| `errorMessages` | String/Array | `[]` | Error messages to display |
+
+All `FormContainer` props are also supported (padding, shadow, background, rounded, border, maxWidth, class).
+
+#### Events
+
+- `@import` - Emitted when import button is clicked. Receives object with:
+  - `file` - The uploaded File object
+  - `data` - Array of mapped data objects
+  - `originalRows` - Original CSV rows before mapping
+  - `mapping` - Column mapping object
+- `@cancel` - Emitted when cancel button is clicked
+- `@file-selected` - Emitted when a file is selected and parsed
+- `@error` - Emitted when an error occurs
+
+#### Example with Backend Integration
+
+```vue
+<template>
+  <CsvImport
+    title="Import Products"
+    :columns="productColumns"
+    @import="handleImport"
+  />
+</template>
+
+<script setup>
+import { router } from '@inertiajs/vue3'
+import CsvImport from '@/Components/Form/CsvImport.vue'
+
+const productColumns = [
+  { key: 'sku', label: 'SKU', required: true },
+  { key: 'name', label: 'Product Name', required: true },
+  { key: 'price', label: 'Price', required: true, type: 'number' },
+  { key: 'stock', label: 'Stock Quantity', type: 'number' }
+]
+
+const handleImport = async (importData) => {
+  const formData = new FormData()
+  formData.append('file', importData.file)
+  formData.append('data', JSON.stringify(importData.data))
+  formData.append('mapping', JSON.stringify(importData.mapping))
+  
+  router.post('/admin/products/import', formData, {
+    forceFormData: true,
+    onSuccess: () => {
+      // Show success message
+    },
+    onError: (errors) => {
+      // Handle validation errors
+    }
+  })
+}
+</script>
+```
+
+#### Backend Controller Example
+
+```php
+public function import(Request $request)
+{
+    $request->validate([
+        'data' => 'required|array',
+        'data.*.sku' => 'required|string',
+        'data.*.name' => 'required|string',
+        'data.*.price' => 'required|numeric',
+    ]);
+
+    $imported = 0;
+    $errors = [];
+
+    foreach ($request->input('data') as $index => $row) {
+        try {
+            Product::create([
+                'sku' => $row['sku'],
+                'name' => $row['name'],
+                'price' => $row['price'],
+                'stock' => $row['stock'] ?? 0,
+            ]);
+            $imported++;
+        } catch (\Exception $e) {
+            $errors[] = "Row " . ($index + 1) . ": " . $e->getMessage();
+        }
+    }
+
+    return redirect()->back()->with([
+        'success' => "Successfully imported {$imported} products.",
+        'errors' => $errors
+    ]);
+}
 ```
 
 ## Configuration
