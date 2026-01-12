@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-01-12
+
+### Added
+
+- Added `AuthorizesRequests` trait to `BaseResourceController` for authorization support
+- Added `spatie/laravel-permission` as a required dependency
+
 ## [2.7.24] - 2024-12-XX
 
 ### Fixed

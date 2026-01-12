@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\App;
@@ -162,6 +163,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 abstract class BaseResourceController extends Controller
 {
+    use AuthorizesRequests;
+
     abstract protected function getResourceClass(): string;
 
     abstract protected function getModel(): string;
