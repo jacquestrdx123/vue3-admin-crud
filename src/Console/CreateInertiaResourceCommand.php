@@ -17,6 +17,7 @@ class CreateInertiaResourceCommand extends Command
                             {--no-controller : Skip generating the controller}
                             {--no-routes : Skip generating route definitions}
                             {--no-vue : Skip generating Vue page files}
+                            {--no-policy : Skip generating the policy}
                             {--all : Generate controller, routes, and Vue files}';
 
     /**
@@ -35,6 +36,7 @@ class CreateInertiaResourceCommand extends Command
         $generateController = $this->option('all') || ! $this->option('no-controller');
         $generateRoutes = $this->option('all') || ! $this->option('no-routes');
         $generateVue = $this->option('all') || ! $this->option('no-vue');
+        $generatePolicy = $this->option('all') || ! $this->option('no-policy');
 
         // Validate model exists
         if (! class_exists($model)) {
@@ -66,12 +68,19 @@ class CreateInertiaResourceCommand extends Command
         // This ensures the directory structure matches the namespace
         $namespacePathForPhp = '\\'.$namespacePathForPhp;
 
+        // For policies, extract parent namespace path (excluding model name)
+        // Example: Admin/User -> Admin, User -> (empty)
+        $policyNamespacePath = $this->extractParentNamespacePath($modelNamespacePath);
+        $policyNamespacePathForPhp = $policyNamespacePath ? '\\'.str_replace('/', '\\', $policyNamespacePath) : '';
+
         $resourceNamespace = $appNamespace.'Support\\Inertia\\Resources'.$namespacePathForPhp;
         $controllerNamespace = $appNamespace.'Http\\Controllers\\Inertia'.$namespacePathForPhp;
+        $policyNamespace = $appNamespace.'Policies'.$policyNamespacePathForPhp;
 
         // Create directories if they don't exist
         $resourcePath = app_path('Support/Inertia/Resources/'.$modelNamespacePath);
         $controllerPath = app_path('Http/Controllers/Inertia/'.$modelNamespacePath);
+        $policyPath = app_path('Policies/'.($policyNamespacePath ?: ''));
 
         if (! File::exists($resourcePath)) {
             File::makeDirectory($resourcePath, 0755, true);
@@ -79,6 +88,10 @@ class CreateInertiaResourceCommand extends Command
 
         if ($generateController && ! File::exists($controllerPath)) {
             File::makeDirectory($controllerPath, 0755, true);
+        }
+
+        if ($generatePolicy && ! File::exists($policyPath)) {
+            File::makeDirectory($policyPath, 0755, true);
         }
 
         // Generate InertiaResource
@@ -98,6 +111,11 @@ class CreateInertiaResourceCommand extends Command
         // Generate Vue Files
         if ($generateVue) {
             $this->generateVueFiles($model, $modelName, $slug);
+        }
+
+        // Generate Policy
+        if ($generatePolicy) {
+            $this->generatePolicy($model, $modelName, $policyNamespace, $policyPath, $slug);
         }
 
         $this->newLine();
@@ -290,6 +308,41 @@ class CreateInertiaResourceCommand extends Command
     }
 
     /**
+     * Generate the Policy class
+     */
+    protected function generatePolicy(string $model, string $modelName, string $namespace, string $path, string $slug): void
+    {
+        $policyName = $modelName.'Policy';
+        $filePath = "{$path}/{$policyName}.php";
+
+        if (File::exists($filePath)) {
+            if (! $this->confirm("Policy file {$policyName}.php already exists. Overwrite?", true)) {
+                $this->warn("Skipped {$policyName}.php");
+
+                return;
+            }
+        }
+
+        // Convert slug from kebab-case to snake_case for permission prefix
+        // Example: rainfall-data -> rainfall_data
+        $permissionPrefix = str_replace('-', '_', $slug);
+
+        // Get camelCase version of model name for variable names
+        $modelVariable = Str::camel($modelName);
+
+        $stub = File::get(__DIR__.'/../../stubs/Policy.stub');
+        $stub = str_replace('{{ namespace }}', $namespace, $stub);
+        $stub = str_replace('{{ policyName }}', $policyName, $stub);
+        $stub = str_replace('{{ model }}', $model, $stub);
+        $stub = str_replace('{{ modelName }}', $modelName, $stub);
+        $stub = str_replace('{{ modelVariable }}', $modelVariable, $stub);
+        $stub = str_replace('{{ permissionPrefix }}', $permissionPrefix, $stub);
+
+        File::put($filePath, $stub);
+        $this->info("✅ Created {$policyName}.php");
+    }
+
+    /**
      * Extract namespace path from model class directly from the input string
      * Example: App\Models\Users\User -> Users/User
      * Example: App\Models\User -> User
@@ -310,6 +363,28 @@ class CreateInertiaResourceCommand extends Command
 
         // Fallback: just use the class basename
         return class_basename($model);
+    }
+
+    /**
+     * Extract parent namespace path (excluding the model name)
+     * Example: Admin/User -> Admin
+     * Example: User -> (empty string)
+     * Example: Users/User -> Users
+     */
+    protected function extractParentNamespacePath(string $modelNamespacePath): string
+    {
+        // Split by forward slash
+        $parts = explode('/', $modelNamespacePath);
+
+        // If there's only one part (just the model name), return empty string
+        if (count($parts) <= 1) {
+            return '';
+        }
+
+        // Remove the last part (model name) and join the rest
+        array_pop($parts);
+
+        return implode('/', $parts);
     }
 
     /**

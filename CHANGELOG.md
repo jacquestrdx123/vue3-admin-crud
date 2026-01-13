@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-01-XX
+
+### Added
+
+- Added `vue-inertia-resources:permissions:sync-from-policies` command to sync permissions from Policy files to the database
+- Command automatically scans all Policy files in `app/Policies` directory
+- Extracts permission names from `$user->can('...')` calls in Policy files
+- Creates missing permissions in the database using Spatie Permission model
+- Removes orphaned permissions that are no longer referenced in Policy files
+- Provides detailed output showing created, existing, and removed permissions
+
 ## [2.8.0] - 2026-01-12
 
 ### Added

@@ -177,6 +177,11 @@ class ForceReinstallCommand extends InstallCommand
             $userResourceCreated = true;
         }
 
+        // Create Cursor and Laravel Boost rules (force overwrite)
+        $this->info('📝 Creating Cursor and Laravel Boost rules...');
+        $this->createCursorRules(true);
+        $this->newLine();
+
         $this->newLine();
         $this->info('✅ Vue Inertia Resources force reinstall complete!');
         $this->newLine();

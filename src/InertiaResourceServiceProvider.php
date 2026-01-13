@@ -45,6 +45,7 @@ class InertiaResourceServiceProvider extends ServiceProvider
                 \InertiaResource\Console\CopyComponentsCommand::class,
                 \InertiaResource\Console\RecreateLayoutsCommand::class,
                 \InertiaResource\Console\SetupMiddlewareCommand::class,
+                \InertiaResource\Console\SyncPermissionsFromPoliciesCommand::class,
             ]);
         }
 

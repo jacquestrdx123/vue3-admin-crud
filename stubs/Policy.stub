@@ -1,0 +1,101 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ model }};
+use App\Models\User;
+
+class {{ policyName }}
+{
+    /**
+     * Check if user is Super Admin.
+     */
+    private function isSuperAdmin(User $user): bool
+    {
+        return $user->hasRole('Super Admin', 'web');
+    }
+
+    /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny(User $user): bool
+    {
+        if ($this->isSuperAdmin($user)) {
+            return true;
+        }
+
+        return $user->can('{{ permissionPrefix }}.viewAny');
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, {{ modelName }} ${{ modelVariable }}): bool
+    {
+        if ($this->isSuperAdmin($user)) {
+            return true;
+        }
+
+        return $user->can('{{ permissionPrefix }}.view');
+    }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public function create(User $user): bool
+    {
+        if ($this->isSuperAdmin($user)) {
+            return true;
+        }
+
+        return $user->can('{{ permissionPrefix }}.create');
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(User $user, {{ modelName }} ${{ modelVariable }}): bool
+    {
+        if ($this->isSuperAdmin($user)) {
+            return true;
+        }
+
+        return $user->can('{{ permissionPrefix }}.update');
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, {{ modelName }} ${{ modelVariable }}): bool
+    {
+        if ($this->isSuperAdmin($user)) {
+            return true;
+        }
+
+        return $user->can('{{ permissionPrefix }}.delete');
+    }
+
+    /**
+     * Determine whether the user can restore the model.
+     */
+    public function restore(User $user, {{ modelName }} ${{ modelVariable }}): bool
+    {
+        if ($this->isSuperAdmin($user)) {
+            return true;
+        }
+
+        return $user->can('{{ permissionPrefix }}.restore');
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(User $user, {{ modelName }} ${{ modelVariable }}): bool
+    {
+        if ($this->isSuperAdmin($user)) {
+            return true;
+        }
+
+        return $user->can('{{ permissionPrefix }}.forceDelete');
+    }
+}

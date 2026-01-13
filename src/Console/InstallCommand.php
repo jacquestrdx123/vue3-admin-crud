@@ -185,6 +185,11 @@ class InstallCommand extends Command
             }
         }
 
+        // Create Cursor and Laravel Boost rules
+        $this->info('📝 Creating Cursor and Laravel Boost rules...');
+        $this->createCursorRules();
+        $this->newLine();
+
         $this->newLine();
         $this->info('✅ Vue Inertia Resources installation complete!');
         $this->newLine();
@@ -1113,5 +1118,323 @@ CSS;
 
         File::put($resourcePath, $content);
         $this->info('   ✅ Added enhanced fields to User Resource.');
+    }
+
+    /**
+     * Create Cursor and Laravel Boost rules files
+     *
+     * @param  bool  $forceOverwrite  Whether to overwrite existing files
+     */
+    protected function createCursorRules(bool $forceOverwrite = false): void
+    {
+        $basePath = base_path();
+        $cursorRulesPath = $basePath.'/.cursorrules';
+        $cursorDir = $basePath.'/.cursor';
+        $cursorRulesJsonPath = $cursorDir.'/rules.json';
+
+        // Create .cursor directory if it doesn't exist
+        if (! File::exists($cursorDir)) {
+            File::makeDirectory($cursorDir, 0755, true);
+        }
+
+        // Rules content for .cursorrules (plain text format for Cursor)
+        $cursorRulesContent = <<<'RULES'
+## InertiaResource System
+
+This application uses the InertiaResource package to generate CRUD interfaces. When creating new resources, follow the established patterns exactly.
+
+### Resource Class Structure
+- Resource classes must extend `InertiaResource\Inertia\InertiaResource`
+- Location: `app/Support/Inertia/Resources/{ResourceName}/{ResourceName}Resource.php`
+- Required static properties:
+  - `$model`: Fully qualified model class (e.g., `\App\Models\Customer::class`)
+  - `$title`: Display title (e.g., `'Customer'`)
+  - `$slug`: URL slug (e.g., `'customers'`) - use kebab-case, plural
+  - `$indexPage`: Vue page path (e.g., `'Resources/Customer/Index'`)
+  - `$createPage`: Vue page path (e.g., `'Resources/Customer/Create'`)
+  - `$editPage`: Vue page path (e.g., `'Resources/Customer/Edit'`)
+  - `$showPage`: Vue page path (e.g., `'Resources/Customer/Show'`)
+
+### Table Configuration
+- The `table()` method must return an array with:
+  - `columns`: Array of column definitions using column classes
+  - `filters`: Array of filter definitions (can be empty)
+  - `actions`: Array of action definitions (e.g., `[['name' => 'view', 'label' => 'View']]`)
+  - `bulkActions`: Array of bulk action definitions (can be empty)
+
+### Form Configuration
+- The `form()` method must return an array of form field definitions
+- Use field classes from `InertiaResource\FormFields\*`
+- Common field types: `TextField`, `DateField`, `NumberField`, `RelationshipField`
+- Chain methods like `->required()`, `->step(0.01)` for NumberField
+
+### Available Column Types
+- `TextColumn::make('field_name', 'Label')` - For text fields
+- `TextColumn::make('relationship.field', 'Label')` - For relationship fields (e.g., `'site.name'`)
+- `DateColumn::make('date', 'Date')` - For date fields
+
+### Available Form Field Types
+- `TextField::make('name', 'Label')->required()` - Text input
+- `DateField::make('date', 'Date')->required()` - Date input
+- `NumberField::make('amount', 'Amount')->step(0.01)` - Number input
+- `RelationshipField::make('site_id', 'Site')->relationship('site', 'name')` - Select dropdown for relationships
+
+### Controller Structure
+- Controllers must extend `InertiaResource\Http\Controllers\BaseResourceController`
+- Location: `app/Http/Controllers/Inertia/{ResourceName}/{ResourceName}Controller.php`
+- Required methods:
+  - `getResourceClass()`: Return the resource class (e.g., `CustomerResource::class`)
+  - `getModel()`: Return the model class (e.g., `Customer::class`)
+  - `getIndexRoute()`: Return the route name (e.g., `'vue.customers.index'`)
+- Optional: Override `getQuery()` to eager load relationships
+
+### Route Naming Convention
+- Route prefix: Use the resource slug (kebab-case, plural)
+- Route name pattern: `{resource-slug}.{action}` (e.g., `customers.index`, `rainfall-datas.create`)
+- Standard CRUD routes: `index`, `create`, `store`, `show`, `edit`, `update`, `destroy`
+- Additional routes: `bulk-action`, `export`
+- Route group structure:
+  ```php
+  Route::prefix('{resource-slug}')->name('{resource-slug}.')->group(function () {
+      Route::get('/', [Controller::class, 'index'])->name('index');
+      // ... other routes
+  });
+  ```
+
+### Vue Page Structure
+- Location: `resources/js/Pages/Resources/{ResourceName}/`
+- Required pages: `Index.vue`, `Create.vue`, `Edit.vue`, `Show.vue`
+- All pages receive props: `fields`, `resourceSlug`, `title`
+- Index page also receives: `data`, `columns`, `actions`, `bulkActions`, `filters`, `customFilters`, `filterValues`, `presetViews`, `activePreset`, `activePresets`, `allColumns`, `rawSql`, `description`
+- Create/Edit pages also receive: `item` (Edit only)
+- Show page also receives: `item`
+
+### Index Page Pattern
+- Uses `BaseDataTable` component with all required props
+- Uses `Pagination` component if `data.links` exists
+- Implements handlers: `handleAction`, `handleBulkAction`, `handleSort`, `handleFilter`
+- Route names in handlers: `route('{resource-slug}.{action}', id)`
+- Action handler switch cases: `'view'`, `'edit'`, `'delete'`
+- Bulk action handler switch cases: `'delete'`, `'export'`
+- Uses `usePreserveQueryParams` composable for sorting
+- Header actions template slot with "Add {title}" link to create route
+
+### Create Page Pattern
+- Uses `useForm` from Inertia
+- Dynamically renders form fields using `getFieldComponent` helper
+- Field component mapping includes: `text`, `email`, `select`, `textarea`, `date`, `datetime`, `number`, `toggle`, `checkbox`, `multi-select`, `file`, `file-upload`
+- Form submission: `form.post(route('{resource-slug}.store'), { preserveScroll: true })`
+- Cancel link: `route('{resource-slug}.index')`
+
+### Edit Page Pattern
+- Same as Create page but:
+  - Receives `item` prop
+  - Initializes form with `props.item[field.name]` values
+  - Uses `getItemId` helper to safely extract ID
+  - Form submission: `form.put(route('{resource-slug}.update', itemId), { preserveScroll: true })`
+
+### Show Page Pattern
+- Uses `Card` and `Badge` components
+- Displays fields in a grid layout
+- Handles special field types: `boolean` (Badge), `date` (formatted), `money` (formatted), `textarea` (whitespace-pre-wrap)
+- Edit button: `route('{resource-slug}.edit', itemId)`
+- Delete button: `router.delete(route('{resource-slug}.destroy', itemId))`
+- Uses `getItemId` helper and `computed` for itemId
+
+### Helper Functions
+- `getItemId(item)`: Safely extracts ID from item object, checks: `id`, `ID`, `Id`, `uuid`, `UUID`
+- `getFieldComponent(type)`: Maps field types to Vue components
+- `formatDate(date)`: Formats date using `toLocaleDateString()`
+- `formatMoney(amount)`: Formats as South African Rand (R) with commas
+
+### Importing Components
+- Index: `BaseDataTable`, `Pagination`, `usePreserveQueryParams`, `Authenticated`
+- Create/Edit: `useForm`, `Link`, all form field components
+- Show: `Card`, `Badge`, `router`, `Link`, `computed`
+
+### Route Helper Usage
+- Always use `route()` helper function, not hardcoded URLs
+- Pattern: `route('{resource-slug}.{action}', id)` where id is optional
+- Example: `route('customers.show', row.id)`
+
+### Naming Conventions
+- Resource class: `{ModelName}Resource` (e.g., `CustomerResource`)
+- Controller: `{ModelName}Controller` (e.g., `CustomerController`)
+- Route slug: kebab-case, plural (e.g., `customers`, `rainfall-datas`)
+- Vue page directory: PascalCase matching model name (e.g., `Customer`, `RainfallData`)
+
+### When Creating New Resources
+1. Create the Resource class in `app/Support/Inertia/Resources/{ResourceName}/`
+2. Create the Controller in `app/Http/Controllers/Inertia/{ResourceName}/`
+3. Create Vue pages in `resources/js/Pages/Resources/{ResourceName}/`
+4. Add routes to `routes/web.php` following the established pattern
+5. Copy the structure from existing resources (Customer or RainfallData) and adapt
+6. Ensure all route names use the resource slug consistently
+7. Ensure all Vue pages use the same prop structure and handlers
+RULES;
+
+        // JSON rules for Laravel Boost (.cursor/rules.json)
+        $cursorRulesJson = [
+            'agents' => ['cursor'],
+            'editors' => ['cursor'],
+            'guidelines' => [
+                [
+                    'name' => 'inertia-resource/core',
+                    'rules' => [
+                        '## InertiaResource System',
+                        '',
+                        'This application uses the InertiaResource package to generate CRUD interfaces. When creating new resources, follow the established patterns exactly.',
+                        '',
+                        '### Resource Class Structure',
+                        '- Resource classes must extend `InertiaResource\\Inertia\\InertiaResource`',
+                        '- Location: `app/Support/Inertia/Resources/{ResourceName}/{ResourceName}Resource.php`',
+                        '- Required static properties:',
+                        '  - `$model`: Fully qualified model class (e.g., `\\App\\Models\\Customer::class`)',
+                        '  - `$title`: Display title (e.g., `\'Customer\'`)',
+                        '  - `$slug`: URL slug (e.g., `\'customers\'`) - use kebab-case, plural',
+                        '  - `$indexPage`: Vue page path (e.g., `\'Resources/Customer/Index\'`)',
+                        '  - `$createPage`: Vue page path (e.g., `\'Resources/Customer/Create\'`)',
+                        '  - `$editPage`: Vue page path (e.g., `\'Resources/Customer/Edit\'`)',
+                        '  - `$showPage`: Vue page path (e.g., `\'Resources/Customer/Show\'`)',
+                        '',
+                        '### Table Configuration',
+                        '- The `table()` method must return an array with:',
+                        '  - `columns`: Array of column definitions using column classes',
+                        '  - `filters`: Array of filter definitions (can be empty)',
+                        '  - `actions`: Array of action definitions (e.g., `[[\'name\' => \'view\', \'label\' => \'View\']]`)',
+                        '  - `bulkActions`: Array of bulk action definitions (can be empty)',
+                        '',
+                        '### Form Configuration',
+                        '- The `form()` method must return an array of form field definitions',
+                        '- Use field classes from `InertiaResource\\FormFields\\*`',
+                        '- Common field types: `TextField`, `DateField`, `NumberField`, `RelationshipField`',
+                        '- Chain methods like `->required()`, `->step(0.01)` for NumberField',
+                        '',
+                        '### Available Column Types',
+                        '- `TextColumn::make(\'field_name\', \'Label\')` - For text fields',
+                        '- `TextColumn::make(\'relationship.field\', \'Label\')` - For relationship fields (e.g., `\'site.name\'`)',
+                        '- `DateColumn::make(\'date\', \'Date\')` - For date fields',
+                        '',
+                        '### Available Form Field Types',
+                        '- `TextField::make(\'name\', \'Label\')->required()` - Text input',
+                        '- `DateField::make(\'date\', \'Date\')->required()` - Date input',
+                        '- `NumberField::make(\'amount\', \'Amount\')->step(0.01)` - Number input',
+                        '- `RelationshipField::make(\'site_id\', \'Site\')->relationship(\'site\', \'name\')` - Select dropdown for relationships',
+                        '',
+                        '### Controller Structure',
+                        '- Controllers must extend `InertiaResource\\Http\\Controllers\\BaseResourceController`',
+                        '- Location: `app/Http/Controllers/Inertia/{ResourceName}/{ResourceName}Controller.php`',
+                        '- Required methods:',
+                        '  - `getResourceClass()`: Return the resource class (e.g., `CustomerResource::class`)',
+                        '  - `getModel()`: Return the model class (e.g., `Customer::class`)',
+                        '  - `getIndexRoute()`: Return the route name (e.g., `\'vue.customers.index\'`)',
+                        '- Optional: Override `getQuery()` to eager load relationships',
+                        '',
+                        '### Route Naming Convention',
+                        '- Route prefix: Use the resource slug (kebab-case, plural)',
+                        '- Route name pattern: `{resource-slug}.{action}` (e.g., `customers.index`, `rainfall-datas.create`)',
+                        '- Standard CRUD routes: `index`, `create`, `store`, `show`, `edit`, `update`, `destroy`',
+                        '- Additional routes: `bulk-action`, `export`',
+                        '- Route group structure:',
+                        '  ```php',
+                        '  Route::prefix(\'{resource-slug}\')->name(\'{resource-slug}.\')->group(function () {',
+                        '      Route::get(\'/\', [Controller::class, \'index\'])->name(\'index\');',
+                        '      // ... other routes',
+                        '  });',
+                        '  ```',
+                        '',
+                        '### Vue Page Structure',
+                        '- Location: `resources/js/Pages/Resources/{ResourceName}/`',
+                        '- Required pages: `Index.vue`, `Create.vue`, `Edit.vue`, `Show.vue`',
+                        '- All pages receive props: `fields`, `resourceSlug`, `title`',
+                        '- Index page also receives: `data`, `columns`, `actions`, `bulkActions`, `filters`, `customFilters`, `filterValues`, `presetViews`, `activePreset`, `activePresets`, `allColumns`, `rawSql`, `description`',
+                        '- Create/Edit pages also receive: `item` (Edit only)',
+                        '- Show page also receives: `item`',
+                        '',
+                        '### Index Page Pattern',
+                        '- Uses `BaseDataTable` component with all required props',
+                        '- Uses `Pagination` component if `data.links` exists',
+                        '- Implements handlers: `handleAction`, `handleBulkAction`, `handleSort`, `handleFilter`',
+                        '- Route names in handlers: `route(\'{resource-slug}.{action}\', id)`',
+                        '- Action handler switch cases: `\'view\'`, `\'edit\'`, `\'delete\'`',
+                        '- Bulk action handler switch cases: `\'delete\'`, `\'export\'`',
+                        '- Uses `usePreserveQueryParams` composable for sorting',
+                        '- Header actions template slot with "Add {title}" link to create route',
+                        '',
+                        '### Create Page Pattern',
+                        '- Uses `useForm` from Inertia',
+                        '- Dynamically renders form fields using `getFieldComponent` helper',
+                        '- Field component mapping includes: `text`, `email`, `select`, `textarea`, `date`, `datetime`, `number`, `toggle`, `checkbox`, `multi-select`, `file`, `file-upload`',
+                        '- Form submission: `form.post(route(\'{resource-slug}.store\'), { preserveScroll: true })`',
+                        '- Cancel link: `route(\'{resource-slug}.index\')`',
+                        '',
+                        '### Edit Page Pattern',
+                        '- Same as Create page but:',
+                        '  - Receives `item` prop',
+                        '  - Initializes form with `props.item[field.name]` values',
+                        '  - Uses `getItemId` helper to safely extract ID',
+                        '  - Form submission: `form.put(route(\'{resource-slug}.update\', itemId), { preserveScroll: true })`',
+                        '',
+                        '### Show Page Pattern',
+                        '- Uses `Card` and `Badge` components',
+                        '- Displays fields in a grid layout',
+                        '- Handles special field types: `boolean` (Badge), `date` (formatted), `money` (formatted), `textarea` (whitespace-pre-wrap)',
+                        '- Edit button: `route(\'{resource-slug}.edit\', itemId)`',
+                        '- Delete button: `router.delete(route(\'{resource-slug}.destroy\', itemId))`',
+                        '- Uses `getItemId` helper and `computed` for itemId',
+                        '',
+                        '### Helper Functions',
+                        '- `getItemId(item)`: Safely extracts ID from item object, checks: `id`, `ID`, `Id`, `uuid`, `UUID`',
+                        '- `getFieldComponent(type)`: Maps field types to Vue components',
+                        '- `formatDate(date)`: Formats date using `toLocaleDateString()`',
+                        '- `formatMoney(amount)`: Formats as South African Rand (R) with commas',
+                        '',
+                        '### Importing Components',
+                        '- Index: `BaseDataTable`, `Pagination`, `usePreserveQueryParams`, `Authenticated`',
+                        '- Create/Edit: `useForm`, `Link`, all form field components',
+                        '- Show: `Card`, `Badge`, `router`, `Link`, `computed`',
+                        '',
+                        '### Route Helper Usage',
+                        '- Always use `route()` helper function, not hardcoded URLs',
+                        '- Pattern: `route(\'{resource-slug}.{action}\', id)` where id is optional',
+                        '- Example: `route(\'customers.show\', row.id)`',
+                        '',
+                        '### Naming Conventions',
+                        '- Resource class: `{ModelName}Resource` (e.g., `CustomerResource`)',
+                        '- Controller: `{ModelName}Controller` (e.g., `CustomerController`)',
+                        '- Route slug: kebab-case, plural (e.g., `customers`, `rainfall-datas`)',
+                        '- Vue page directory: PascalCase matching model name (e.g., `Customer`, `RainfallData`)',
+                        '',
+                        '### When Creating New Resources',
+                        '1. Create the Resource class in `app/Support/Inertia/Resources/{ResourceName}/`',
+                        '2. Create the Controller in `app/Http/Controllers/Inertia/{ResourceName}/`',
+                        '3. Create Vue pages in `resources/js/Pages/Resources/{ResourceName}/`',
+                        '4. Add routes to `routes/web.php` following the established pattern',
+                        '5. Copy the structure from existing resources (Customer or RainfallData) and adapt',
+                        '6. Ensure all route names use the resource slug consistently',
+                        '7. Ensure all Vue pages use the same prop structure and handlers',
+                    ],
+                ],
+            ],
+            'herd_mcp' => true,
+        ];
+
+        // Write .cursorrules file (for Cursor)
+        $cursorRulesExists = File::exists($cursorRulesPath);
+        if ($cursorRulesExists && ! $forceOverwrite) {
+            $this->comment('   ℹ️  .cursorrules already exists. Skipping...');
+        } else {
+            File::put($cursorRulesPath, $cursorRulesContent);
+            $this->info('   ✅ '.($forceOverwrite && $cursorRulesExists ? 'Updated' : 'Created').' .cursorrules file');
+        }
+
+        // Write .cursor/rules.json file (for Laravel Boost)
+        $cursorRulesJsonExists = File::exists($cursorRulesJsonPath);
+        if ($cursorRulesJsonExists && ! $forceOverwrite) {
+            $this->comment('   ℹ️  .cursor/rules.json already exists. Skipping...');
+        } else {
+            File::put($cursorRulesJsonPath, json_encode($cursorRulesJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            $this->info('   ✅ '.($forceOverwrite && $cursorRulesJsonExists ? 'Updated' : 'Created').' .cursor/rules.json file');
+        }
     }
 }
