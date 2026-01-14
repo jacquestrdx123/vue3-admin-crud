@@ -29,7 +29,27 @@ class SyncPermissionsFromPoliciesCommand extends Command
     {
         $this->info('Scanning Policy files...');
 
-        $policyFiles = File::allFiles(app_path('Policies'));
+        $policiesPath = app_path('Policies');
+
+        if (! File::exists($policiesPath)) {
+            $this->warn("Policies directory not found: {$policiesPath}");
+            $this->info('No policies found. Create policies first using: php artisan make:inertia-policies');
+
+            return self::SUCCESS;
+        }
+
+        // File::allFiles() already searches recursively by default
+        $policyFiles = File::allFiles($policiesPath);
+
+        if (empty($policyFiles)) {
+            $this->warn('No Policy files found in the Policies directory.');
+            $this->info('Create policies first using: php artisan make:inertia-policies');
+
+            return self::SUCCESS;
+        }
+
+        $this->info('Found '.count($policyFiles).' Policy file(s) (searching recursively)...');
+        $this->newLine();
 
         $permissionsFound = [];
 
